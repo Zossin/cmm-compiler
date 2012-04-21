@@ -5,7 +5,7 @@
 
 extern unsigned char is_error_happened;
 
-extern struct st_node *create_token_node(char *name);
+extern struct st_node *create_token_node(char *name, node_type type);
 %}
 
 %option yylineno
@@ -108,7 +108,7 @@ BLANK   [ \t\n\r]
 #ifdef PRINT_TOKEN
 	fprintf(stdout, "INT\n");
 #endif
-    yylval = create_token_node("INT");
+    yylval = create_token_node("INT", INT_TOKEN);
     yylval->value.int_val = atoi_ext(yytext);
 	return INT;
 }
@@ -117,7 +117,7 @@ BLANK   [ \t\n\r]
 #ifdef PRINT_TOKEN
 	fprintf(stdout, "FLOAT\n");
 #endif
-    yylval = create_token_node("FLOAT");
+    yylval = create_token_node("FLOAT", FLOAT_TOKEN);
     yylval->value.float_val = atof(yytext);
     return FLOAT;
 }
@@ -126,7 +126,7 @@ BLANK   [ \t\n\r]
 #ifdef PRINT_TOKEN
 	fprintf(stdout, "SEMI\n");
 #endif
-    yylval = create_token_node("SEMI");
+    yylval = create_token_node("SEMI", SEMI_TOKEN);
 	return SEMI;
 }
 
@@ -134,7 +134,7 @@ BLANK   [ \t\n\r]
 #ifdef PRINT_TOKEN
 	fprintf(stdout, "COMMA\n");
 #endif
-    yylval = create_token_node("COMMA");
+    yylval = create_token_node("COMMA", COMMA_TOKEN);
 	return COMMA;
 }
 
@@ -142,7 +142,7 @@ BLANK   [ \t\n\r]
 #ifdef PRINT_TOKEN
 	fprintf(stdout, "ASSIGNOP\n");
 #endif
-    yylval = create_token_node("ASSIGNOP");
+    yylval = create_token_node("ASSIGNOP", ASSIGNOP_TOKEN);
 	return ASSIGNOP;
 }
 
@@ -150,7 +150,7 @@ BLANK   [ \t\n\r]
 #ifdef PRINT_TOKEN
 	fprintf(stdout, "RELOP\n");
 #endif
-    yylval = create_token_node("RELOP");
+    yylval = create_token_node("RELOP", RELOP_TOKEN);
 	return RELOP;
 }
 
@@ -158,7 +158,7 @@ BLANK   [ \t\n\r]
 #ifdef PRINT_TOKEN
 	fprintf(stdout, "PLUS\n");
 #endif
-    yylval = create_token_node("PLUS");
+    yylval = create_token_node("PLUS", PLUS_TOKEN);
 	return PLUS;
 }
 
@@ -166,7 +166,7 @@ BLANK   [ \t\n\r]
 #ifdef PRINT_TOKEN
 	fprintf(stdout, "MINUS\n");
 #endif
-    yylval = create_token_node("MINUS");
+    yylval = create_token_node("MINUS", MINUS_TOKEN);
 	return MINUS;
 }
 
@@ -174,7 +174,7 @@ BLANK   [ \t\n\r]
 #ifdef PRINT_TOKEN
 	fprintf(stdout, "STAR\n");
 #endif
-    yylval = create_token_node("STAR");
+    yylval = create_token_node("STAR", STAR_TOKEN);
 	return STAR;
 }
 
@@ -182,7 +182,7 @@ BLANK   [ \t\n\r]
 #ifdef PRINT_TOKEN
 	fprintf(stdout, "DIV\n");
 #endif
-    yylval = create_token_node("DIV");
+    yylval = create_token_node("DIV", DIV_TOKEN);
 	return DIV;
 }
 
@@ -190,7 +190,7 @@ BLANK   [ \t\n\r]
 #ifdef PRINT_TOKEN
 	fprintf(stdout, "AND\n");
 #endif
-    yylval = create_token_node("AND");
+    yylval = create_token_node("AND", AND_TOKEN);
 	return AND;
 }
 
@@ -198,7 +198,7 @@ BLANK   [ \t\n\r]
 #ifdef PRINT_TOKEN
 	fprintf(stdout, "OR\n");
 #endif
-    yylval = create_token_node("OR");
+    yylval = create_token_node("OR", OR_TOKEN);
 	return OR;
 }
 
@@ -206,7 +206,7 @@ BLANK   [ \t\n\r]
 #ifdef PRINT_TOKEN
 	fprintf(stdout, "DOT\n");
 #endif
-    yylval = create_token_node("DOT");
+    yylval = create_token_node("DOT", DOT_TOKEN);
 	return DOT;
 }
 
@@ -214,7 +214,7 @@ BLANK   [ \t\n\r]
 #ifdef PRINT_TOKEN
 	fprintf(stdout, "NOT\n");
 #endif
-    yylval = create_token_node("NOT");
+    yylval = create_token_node("NOT", NOT_TOKEN);
 	return NOT;
 }
 
@@ -222,7 +222,7 @@ BLANK   [ \t\n\r]
 #ifdef PRINT_TOKEN
 	fprintf(stdout, "TYPE\n");
 #endif
-    yylval = create_token_node("TYPE");
+    yylval = create_token_node("TYPE", TYPE_TOKEN);
     if (strcmp(yytext, "int") == 0)
         yylval->value.type_val = Int;
     else if (strcmp(yytext, "float") == 0)
@@ -234,7 +234,7 @@ BLANK   [ \t\n\r]
 #ifdef PRINT_TOKEN
 	fprintf(stdout, "LP\n");
 #endif
-    yylval = create_token_node("LP");
+    yylval = create_token_node("LP", LP_TOKEN);
 	return LP;
 }
 
@@ -242,7 +242,7 @@ BLANK   [ \t\n\r]
 #ifdef PRINT_TOKEN
 	fprintf(stdout, "RP\n");
 #endif
-    yylval = create_token_node("RP");
+    yylval = create_token_node("RP", RP_TOKEN);
 	return RP;
 }
 
@@ -250,7 +250,7 @@ BLANK   [ \t\n\r]
 #ifdef PRINT_TOKEN
 	fprintf(stdout, "LB\n");
 #endif
-    yylval = create_token_node("LB");
+    yylval = create_token_node("LB", LB_TOKEN);
 	return LB;
 }
 
@@ -258,7 +258,7 @@ BLANK   [ \t\n\r]
 #ifdef PRINT_TOKEN
 	fprintf(stdout, "RB\n");
 #endif
-    yylval = create_token_node("RB");
+    yylval = create_token_node("RB", RB_TOKEN);
 	return RB;
 }
 
@@ -266,7 +266,7 @@ BLANK   [ \t\n\r]
 #ifdef PRINT_TOKEN
 	fprintf(stdout, "LC\n");
 #endif
-    yylval = create_token_node("LC");
+    yylval = create_token_node("LC", LC_TOKEN);
 	return LC;
 }
 
@@ -274,7 +274,7 @@ BLANK   [ \t\n\r]
 #ifdef PRINT_TOKEN
 	fprintf(stdout, "RC\n");
 #endif
-    yylval = create_token_node("RC");
+    yylval = create_token_node("RC", RC_TOKEN);
 	return RC;
 }
 
@@ -282,7 +282,7 @@ BLANK   [ \t\n\r]
 #ifdef PRINT_TOKEN
 	fprintf(stdout, "STRUCT\n");
 #endif
-    yylval = create_token_node("STRUCT");
+    yylval = create_token_node("STRUCT", STRUCT_TOKEN);
 	return STRUCT;
 }
 
@@ -290,7 +290,7 @@ BLANK   [ \t\n\r]
 #ifdef PRINT_TOKEN
 	fprintf(stdout, "RETURN\n");
 #endif
-    yylval = create_token_node("RETURN");
+    yylval = create_token_node("RETURN", RETURN_TOKEN);
 	return RETURN;
 }
 
@@ -298,7 +298,7 @@ BLANK   [ \t\n\r]
 #ifdef PRINT_TOKEN
 	fprintf(stdout, "IF\n");
 #endif
-    yylval = create_token_node("IF");
+    yylval = create_token_node("IF", IF_TOKEN);
 	return IF;
 }
 
@@ -306,7 +306,7 @@ BLANK   [ \t\n\r]
 #ifdef PRINT_TOKEN
 	fprintf(stdout, "ELSE\n");
 #endif
-    yylval = create_token_node("ELSE");
+    yylval = create_token_node("ELSE", ELSE_TOKEN);
 	return ELSE;
 }
 
@@ -314,7 +314,7 @@ BLANK   [ \t\n\r]
 #ifdef PRINT_TOKEN
 	fprintf(stdout, "WHILE\n");
 #endif
-    yylval = create_token_node("WHILE");
+    yylval = create_token_node("WHILE", WHILE_TOKEN);
 	return WHILE;
 }
 
@@ -322,7 +322,7 @@ BLANK   [ \t\n\r]
 #ifdef PRINT_TOKEN
 	fprintf(stdout, "ID\n");
 #endif
-	yylval = create_token_node("ID");
+	yylval = create_token_node("ID", ID_TOKEN);
     yylval->value.str_val = (char*)malloc(yyleng + 1);
     strcpy(yylval->value.str_val, yytext);
 	return ID;
@@ -370,10 +370,11 @@ int atoi_ext(char *str) {
     return val;
 }
 
-struct st_node *create_token_node(char *name) {
+struct st_node *create_token_node(char *name, node_type type) {
     syntax_tree_node *p_node = (struct st_node*)malloc(sizeof(struct st_node));
     p_node->is_token = TRUE;
     p_node->name = name;
+    p_node->type = type;
     p_node->lchild = 0;
     p_node->next_sibling = 0;
     p_node->lineno = yylineno;

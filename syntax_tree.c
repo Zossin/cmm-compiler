@@ -6,7 +6,7 @@
 
 extern int yylineno;
 
-syntax_tree_node *create_syntax_tree_node(char *name, int child_num, ...) {
+syntax_tree_node *create_syntax_tree_node(char *name, node_type type, int child_num, ...) {
     syntax_tree_node *p_node = (syntax_tree_node*)malloc(sizeof(syntax_tree_node));
     p_node->lchild = p_node->next_sibling = 0;
 
@@ -25,6 +25,7 @@ syntax_tree_node *create_syntax_tree_node(char *name, int child_num, ...) {
 
     p_node->is_token = FALSE;
     p_node->name = name;
+    p_node->type = type;
     if (child_num == 0) {
         p_node->lineno = yylineno;
     }
