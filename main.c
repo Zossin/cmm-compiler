@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include "syntax_tree_node.h"
+#include "symbol_table.h"
 
 extern syntax_tree_node *syntax_tree_root;
 

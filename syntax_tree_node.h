@@ -17,6 +17,11 @@ typedef enum {
     Exp_SYNTAX, Args_SYNTAX
 } node_type;
 
+typedef struct {
+    int inh;
+    int type;
+} attribute;
+
 typedef struct st_node {
     char *name;
     node_type type;
@@ -29,6 +34,7 @@ typedef struct st_node {
         enum {Int, Float} type_val;
     } value; 
     int lineno;
+    attribute attr;
 } syntax_tree_node;
 
 syntax_tree_node *create_syntax_tree_node(char *name, node_type type, int child_num, ...);

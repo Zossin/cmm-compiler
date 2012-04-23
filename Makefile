@@ -1,10 +1,19 @@
-parser: main.c cmmyacc.tab.c lex.yy.c syntax_tree.c syntax_tree_node.h
-	gcc main.c cmmyacc.tab.c syntax_tree.c -lfl -ly -o parser 
+parser: main.o cmmyacc.tab.o lex.yy.c syntax_tree.o syntax_tree_node.h symbol_table.h
+	gcc main.o cmmyacc.tab.o syntax_tree.o -lfl -ly -o parser 
+
+main.o: main.c
+	gcc -c main.c
+
+cmmyacc.tab.o: cmmyacc.tab.c
+	gcc -c cmmyacc.tab.c
+
+syntax_tree.o: syntax_tree.c
+	gcc -c syntax_tree.c
 
 lex.yy.c: cmmlex.l
 	flex cmmlex.l
 
-cmmyacc.tab.c: cmmyacc.y
+cmmyacc.tab.c: cmmyacc.y lex.yy.c
 	bison -dv cmmyacc.y
 
 test1: parser test1.cmm
@@ -29,4 +38,4 @@ test7: parser test7.cmm
 	./parser test7.cmm
 
 clean:
-	rm lex.yy.c cmmyacc.tab.c cmmyacc.tab.h parser cmmyacc.output
+	rm lex.yy.c cmmyacc.tab.c cmmyacc.tab.h parser cmmyacc.output *.o
