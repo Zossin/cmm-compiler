@@ -1,29 +1,10 @@
 #ifndef _SYMBOL_TABLE_H_
 #define _SYMBOL_TABLE_H_
 
+#include "common.h"
+
 #define NR_SYMBOL_TABLE 0x4000
 #define SYMBOL_NAME_LEN 32
-
-typedef struct Type_ Type;
-typedef struct FieldList_ FieldList;
-
-struct Type_ {
-    enum { Basic, Array, Structure } kind;
-    union {
-        int basic;
-        struct {
-            Type *elem;
-            int size;
-        } array;
-        FieldList *structure;
-    } u;
-};
-
-struct FieldList_ {
-    char *name;
-    Type *type;
-    FieldList *next;
-};
 
 typedef struct arg_node_ {
     Type *type;
@@ -60,7 +41,7 @@ typedef struct hash_node_ {
 } hash_node;
 
 typedef struct {
-    hash_node *ptr;
+    hash_node *head;
 } hash_head;
 
 hash_head symbol_table[NR_SYMBOL_TABLE];
