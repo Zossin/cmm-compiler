@@ -1,9 +1,10 @@
-struct Complex  
-{ 
-  float real, image;  
-}; 
+int j;
+float f;
 int main() 
 { 
-  struct Complex x;  
-  y.image = 3.5;  
+    int i = 0, x = f + 1.5;
+    float tt = f + f - 1.4;
+    int a[10][1], b[1][1] = a;
+    i = f;
+    t = i;
 } 

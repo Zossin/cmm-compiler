@@ -1,7 +1,4 @@
 int main() {
-    //int x = 3;
-    float a = 3.5;
-    /* /*float b = 4.0;*/ */
-    return 0;
+    int i = 0;
+    i = 0;
 }
-//1 < 2
