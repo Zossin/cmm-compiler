@@ -3,6 +3,7 @@
 
 #define TRUE 1
 #define FALSE 0
+#define SYMBOL_NAME_LEN 32
 
 typedef enum { Int, Float } basic_type;
 
@@ -22,10 +23,16 @@ struct Type_ {
 };
 
 struct FieldList_ {
-    char *name;
+    char id[SYMBOL_NAME_LEN];
     Type *type;
     FieldList *next;
 };
+
+typedef struct arg_node_ {
+    Type *type;
+    char id[SYMBOL_NAME_LEN];
+    struct arg_node_ *next;
+} arg_node;
 
 unsigned char is_error_happened;
 

@@ -4,12 +4,6 @@
 #include "common.h"
 
 #define NR_SYMBOL_TABLE 0x4000
-#define SYMBOL_NAME_LEN 32
-
-typedef struct arg_node_ {
-    Type *type;
-    struct arg_node_ *next;
-} arg_node;
 
 typedef struct {
     Type *type;      

@@ -218,8 +218,21 @@ void sdt(syntax_tree_node *p_node) {
                     p_node->attr.is_legal = FALSE;
                 }
                 else  {
-                    p_node->attr.is_legal = TRUE;
                     p_node->attr.type = func_node->u.func_val.ret_type;
+
+                    if (args) {
+                        args->attr.inh_args = func_node->u.func_val.args;
+                        sdt(args);
+                        p_node->attr.is_legal = args->attr.is_legal;
+                    }
+                    else {
+                        if (func_node->u.func_val.args) {
+                            print_error(9, p_node->lineno, "Argument number mismatched.");
+                            p_node->attr.is_legal = FALSE;
+                        }
+                        else
+                            p_node->attr.is_legal = TRUE;
+                    }
                 }
             }
             else {
@@ -284,6 +297,33 @@ void sdt(syntax_tree_node *p_node) {
             p_node->attr.is_legal = TRUE;
         }
     }
+    else if (p_node->type == Args_SYNTAX) {
+        sdt(children[0]);
+        if (p_node->attr.inh_args == NULL) {
+            print_error(9, children[0]->lineno, "Argument number mismatched.");
+            p_node->attr.is_legal = FALSE;
+            return;
+        }
+        if (!is_same_type(p_node->attr.inh_args->type, children[0]->attr.type)) {
+            print_error(9, children[0]->lineno, "Argument type mismatched.");
+            p_node->attr.is_legal = FALSE;
+            return;
+        }
+        
+        if (child_num == 3 && children[0]->type == Exp_SYNTAX && children[1]->type == COMMA_TOKEN && children[2]->type == Args_SYNTAX) {
+            children[2]->attr.inh_args = p_node->attr.inh_args->next;     
+            sdt(children[2]);
+            p_node->attr.is_legal = children[2]->attr.is_legal;
+        }
+        else if (child_num == 1 && children[0]->type == Exp_SYNTAX) {
+            if (p_node->attr.inh_args->next) {
+                print_error(9, p_node->lineno, "Argument number mismatched.");
+                p_node->attr.is_legal = FALSE;
+            }
+            else
+                p_node->attr.is_legal = TRUE;
+        }
+    }
     else if (p_node->type == Specifier_SYNTAX) {
         if (child_num == 1 && children[0]->type == TYPE_TOKEN) {
             p_node->attr.type = (Type*)malloc(sizeof(Type));
@@ -342,6 +382,7 @@ void sdt(syntax_tree_node *p_node) {
                 print_error(3, children[0]->lineno, "Variable redefined.");
             }
             p_node->attr.type = p_node->attr.inh_type;
+            p_node->attr.id = children[0]->value.str_val;
         }
         else if (child_num == 4 && children[0]->type == VarDec_SYNTAX && children[1]->type == LB_TOKEN && children[2]->type == INT_TOKEN && children[3]->type == RB_TOKEN) {
             Type *type_node = (Type*)malloc(sizeof(Type));
@@ -351,6 +392,7 @@ void sdt(syntax_tree_node *p_node) {
             children[0]->attr.inh_type = type_node;
             sdt(children[0]);
             p_node->attr.type = children[0]->attr.type;
+            p_node->attr.id = children[0]->attr.id;
         }
     }
     else if (p_node->type == FunDec_SYNTAX) {
@@ -361,12 +403,36 @@ void sdt(syntax_tree_node *p_node) {
         symbol_node *new_symbol = (symbol_node*)malloc(sizeof(symbol_node));
         strcpy(new_symbol->key, children[0]->value.str_val);
         new_symbol->type= Func;
-        insert_symbol(new_symbol);
+        new_symbol->u.func_val.ret_type = p_node->attr.inh_type;
         if (child_num == 4 && children[0]->type == ID_TOKEN && children[1]->type == LP_TOKEN && children[2]->type == VarList_SYNTAX && children[3]->type == RP_TOKEN) {
-            
+            sdt(children[2]);
+            new_symbol->u.func_val.args = children[2]->attr.args;
         }
         else if (child_num == 3 && children[0]->type == ID_TOKEN && children[1]->type == LP_TOKEN && children[2]->type == RP_TOKEN) {
-
+            new_symbol->u.func_val.args = NULL;
+        }
+        insert_symbol(new_symbol);
+    }
+    else if (p_node->type == VarList_SYNTAX) {
+        sdt(children[0]);
+        p_node->attr.args = (arg_node*)malloc(sizeof(arg_node));
+        p_node->attr.args->type = children[0]->attr.type;
+        strcpy(p_node->attr.args->id, children[0]->attr.id);
+        if (child_num == 3 && children[0]->type == ParamDec_SYNTAX && children[1]->type == COMMA_TOKEN && children[2]->type == VarList_SYNTAX) {
+            sdt(children[2]);
+            p_node->attr.args->next = children[2]->attr.args;
+        }
+        else if (child_num == 1 && children[0]->type == ParamDec_SYNTAX) {
+            p_node->attr.args->next = NULL;
+        }
+    }
+    else if (p_node->type == ParamDec_SYNTAX) {
+        if (child_num == 2 && children[0]->type == Specifier_SYNTAX && children[1]->type == VarDec_SYNTAX) {
+            sdt(children[0]);
+            children[1]->attr.inh_type = children[0]->attr.type;
+            sdt(children[1]);
+            p_node->attr.type = children[1]->attr.type;
+            p_node->attr.id = children[1]->attr.id;
         }
     }
     else {
