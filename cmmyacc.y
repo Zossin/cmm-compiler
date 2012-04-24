@@ -1,9 +1,8 @@
 %{
 #define YYSTYPE syntax_tree_node*
 #include "syntax_tree_node.h"
+#include "common.h"
 #include "lex.yy.c"
-
-extern unsigned char is_error_happened;
 
 void resume_from_error(char const *str);
 syntax_tree_node *syntax_tree_root = 0;
@@ -142,12 +141,12 @@ Args    :   Exp COMMA Args { $$ = create_syntax_tree_node("Args", Args_SYNTAX, 3
 %%
 
 int yyerror(char const *str) {
-    is_error_happened = 1;
-    fprintf(stderr, "Error type 2 at line %d: %s\n", yylineno, str); 
+    is_error_happened = TRUE;
+    fprintf(stdout, "Error type 2 at line %d: %s\n", yylineno, str); 
 }
 
 void resume_from_error(char const *str) {
 #ifdef PRINT_ERROK
-    fprintf(stderr, "Resume from error at line %d: %s\n", yylineno, str);
+    fprintf(stdout, "Resume from error at line %d: %s\n", yylineno, str);
 #endif
 }

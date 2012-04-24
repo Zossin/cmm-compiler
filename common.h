@@ -27,4 +27,6 @@ struct FieldList_ {
     FieldList *next;
 };
 
+unsigned char is_error_happened;
+
 #endif

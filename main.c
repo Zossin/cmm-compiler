@@ -4,8 +4,6 @@
 
 extern syntax_tree_node *syntax_tree_root;
 
-unsigned char is_error_happened = 0;
-
 int main(int argc, char **argv) {
     if (argc <= 1) return 1;
     FILE* f = fopen(argv[1], "r");
@@ -13,10 +11,10 @@ int main(int argc, char **argv) {
         perror(argv[1]);
         return 1;
     }
+    is_error_happened = FALSE;
     yyrestart(f);
     yyparse();
     if (!is_error_happened)
-        dfs_syntax_tree(0, syntax_tree_root);
-    destory_syntax_tree(syntax_tree_root);
+        sdt(syntax_tree_root);
     return 0;
 }

@@ -1,5 +1,9 @@
+int i, j;
+float i;
+
 int main() 
 { 
-  int i = 1;  
-  int j = ~i;
+    int i = 1;  
+    int j = -i;
+    float i;
 } 

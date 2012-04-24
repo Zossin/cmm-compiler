@@ -2,8 +2,7 @@
 #include <stdio.h>
 #include <malloc.h>
 #include "cmmyacc.tab.h"
-
-extern unsigned char is_error_happened;
+#include "common.h"
 
 extern struct st_node *create_token_node(char *name, node_type type);
 %}
@@ -99,8 +98,8 @@ BLANK   [ \t\n\r]
         }
     }
     if (nesting_comment_lineno) {
-        is_error_happened = 1;
-        fprintf(stderr, "Error type 3 at line %d: nesting comments\n", nesting_comment_lineno);
+        is_error_happened = TRUE;
+        fprintf(stdout, "Error type 3 at line %d: nesting comments\n", nesting_comment_lineno);
     }
 }
 
@@ -329,8 +328,8 @@ BLANK   [ \t\n\r]
 }
 
 .  {
-    is_error_happened = 1;
-    fprintf(stderr, "Error type 1 at line %d: Mysterious character '%s'\n", yylineno, yytext); 
+    is_error_happened = TRUE;
+    fprintf(stdout, "Error type 1 at line %d: Mysterious character '%s'\n", yylineno, yytext); 
 }
 
 %%

@@ -22,6 +22,8 @@ typedef enum {
 typedef struct {
     Type *inh_type;
     Type *type;
+    unsigned char is_in_struct;
+    unsigned char is_legal;
 } attribute;
 
 typedef struct st_node {

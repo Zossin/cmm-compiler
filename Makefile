@@ -1,17 +1,17 @@
 parser: main.o cmmyacc.tab.o syntax_tree.o symbol_table.o
-	gcc main.o cmmyacc.tab.o syntax_tree.o symbol_table.o -lfl -ly -o parser 
+	gcc main.o cmmyacc.tab.o syntax_tree.o symbol_table.o -lfl -ly -g -o parser 
 
 main.o: main.c symbol_table.h syntax_tree_node.h common.h
-	gcc -c main.c
+	gcc -g -c main.c
 
 cmmyacc.tab.o: cmmyacc.tab.c
-	gcc -c cmmyacc.tab.c
+	gcc -g -c cmmyacc.tab.c
 
 syntax_tree.o: syntax_tree.c syntax_tree_node.h
-	gcc -c syntax_tree.c
+	gcc -g -c syntax_tree.c
 
 symbol_table.o: symbol_table.c symbol_table.h syntax_tree_node.h common.h
-	gcc -c symbol_table.c
+	gcc -g -c symbol_table.c
 
 lex.yy.c: cmmlex.l
 	flex cmmlex.l
