@@ -149,6 +149,17 @@ void sdt(syntax_tree_node *p_node) {
         if (child_num == 3 && children[0]->type == Exp_SYNTAX && children[1]->type == ASSIGNOP_TOKEN && children[2]->type == Exp_SYNTAX) {
             sdt(children[0]);
             sdt(children[2]);
+            syntax_tree_node *grand_children[4], *grand_child = children[0]->lchild;
+            int grand_child_num = 0;
+            while (grand_child) {
+                grand_children[grand_child_num ++] = grand_child;
+                grand_child = grand_child->next_sibling;
+            }
+            if (!(grand_child_num == 1 && grand_children[0]->type == ID_TOKEN || grand_child_num == 4 && grand_children[0]->type == Exp_SYNTAX && grand_children[1]->type == LB_TOKEN && grand_children[2]->type == Exp_SYNTAX && grand_children[3]->type == RB_TOKEN || grand_child_num == 3 && grand_children[0]->type == Exp_SYNTAX && grand_children[1]->type == DOT_TOKEN && grand_children[2]->type == ID_TOKEN)) {
+                print_error(6, children[0]->lineno, "Assign to right value");
+                p_node->attr.is_legal = FALSE;
+                return;
+            }
             if (children[0]->attr.is_legal && children[2]->attr.is_legal) {
                 if (is_same_type(children[0]->attr.type, children[2]->attr.type)) {
                     p_node->attr.type = children[0]->attr.type;
