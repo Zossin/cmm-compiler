@@ -10,7 +10,7 @@ typedef struct {
 } var_symbol;
 
 typedef struct {
-    FieldList *structure;
+    Type *structure;
 } struct_symbol;
 
 typedef struct {

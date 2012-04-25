@@ -24,6 +24,7 @@ struct Type_ {
 
 struct FieldList_ {
     char id[SYMBOL_NAME_LEN];
+    int lineno;
     Type *type;
     FieldList *next;
 };

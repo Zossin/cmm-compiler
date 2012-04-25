@@ -1,11 +1,14 @@
-struct {
-    int x 1;
+struct s {
+    int x, y;
+    float z, x;
+    float y;
 };
-
 int main() {
-    int a = 1
-    int b = 1;
-    a = 2;
-    int b = 1;
+    struct s t;
+    struct ss t;
+    t.x = 1;
+    t.y = 2.0;
+    t.z = 2.0;
+    t.tt;
     return 0;
 }

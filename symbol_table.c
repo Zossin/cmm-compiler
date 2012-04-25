@@ -114,30 +114,42 @@ void sdt(syntax_tree_node *p_node) {
         if (child_num == 3 && children[0]->type == Specifier_SYNTAX && children[1]->type == DecList_SYNTAX && children[2]->type == SEMI_TOKEN) {
             sdt(children[0]);
             children[1]->attr.inh_type = children[0]->attr.type;
+            children[1]->attr.is_in_struct = p_node->attr.is_in_struct;
             sdt(children[1]);
+            if (p_node->attr.is_in_struct) {
+                p_node->attr.structure = children[1]->attr.structure;
+            }
         }
     }
     else if (p_node->type == DecList_SYNTAX) {
+        children[0]->attr.is_in_struct = p_node->attr.is_in_struct;
+        children[0]->attr.inh_type = p_node->attr.inh_type;
+        sdt(children[0]);
         if (child_num == 1 && children[0]->type == Dec_SYNTAX) {
-            children[0]->attr.inh_type = p_node->attr.inh_type;
-            sdt(children[0]);
+
         }
         else if (child_num == 3 && children[0]->type == Dec_SYNTAX && children[1]->type == COMMA_TOKEN && children[2]->type == DecList_SYNTAX) {
-            children[0]->attr.inh_type = p_node->attr.inh_type;
-            sdt(children[0]);
+            children[2]->attr.is_in_struct = p_node->attr.is_in_struct;
             children[2]->attr.inh_type = p_node->attr.inh_type;
             sdt(children[2]);
+            children[0]->attr.structure->next = children[2]->attr.structure;
         }
+        p_node->attr.structure = children[0]->attr.structure;
     }
     else if (p_node->type == Dec_SYNTAX) {
+        children[0]->attr.is_in_struct = p_node->attr.is_in_struct;
+        children[0]->attr.inh_type = p_node->attr.inh_type;
+        sdt(children[0]);
+        p_node->attr.structure = children[0]->attr.structure;
         if (child_num == 1 && children[0]->type == VarDec_SYNTAX) {
-            children[0]->attr.inh_type = p_node->attr.inh_type;
-            sdt(children[0]);
+
         }
         else if (child_num == 3 && children[0]->type == VarDec_SYNTAX && children[1]->type == ASSIGNOP_TOKEN && children[2]->type == Exp_SYNTAX) {
-            children[0]->attr.inh_type = p_node->attr.inh_type;
-            sdt(children[0]);
             sdt(children[2]);
+            if (p_node->attr.is_in_struct) {
+                print_error(15, children[1]->lineno, "Cannot initialize a field of structure");
+                return;
+            }
             if (children[2]->attr.is_legal) {
                 if (is_same_type(children[0]->attr.type, children[2]->attr.type)) 
                     p_node->attr.type = children[0]->attr.type;
@@ -270,7 +282,26 @@ void sdt(syntax_tree_node *p_node) {
         }
         else if (child_num == 3 && children[0]->type == Exp_SYNTAX && children[1]->type == DOT_TOKEN && children[2]->type == ID_TOKEN) {
             sdt(children[0]);
-            sdt(children[2]);
+            if (children[0]->attr.type->kind != Structure) {
+                print_error(13, children[1]->lineno, "Left side of DOT is not a structure");
+                p_node->attr.is_legal = FALSE;
+                return;
+            }
+            FieldList *field = children[0]->attr.type->u.structure;
+            while (field) {
+                if (strcmp(field->id, children[2]->value.str_val) == 0)
+                    break;
+                field = field->next;
+            }
+
+            if (field) {
+                p_node->attr.type = field->type;
+                p_node->attr.is_legal = TRUE;
+            }
+            else {
+                print_error(14, children[2]->lineno, "Structure field undefined.");
+                p_node->attr.is_legal = FALSE;
+            }
         }
         else if (child_num == 1 && children[0]->type == ID_TOKEN) {
             symbol_node *var_node;
@@ -330,9 +361,12 @@ void sdt(syntax_tree_node *p_node) {
             p_node->attr.type = (Type*)malloc(sizeof(Type));
             p_node->attr.type->kind = Basic;
             p_node->attr.type->u.basic = children[0]->value.type_val;
+            p_node->attr.is_legal = TRUE;
         }
         else if (child_num == 1 && children[0]->type == StructSpecifier_SYNTAX) {
+            sdt(children[0]);
             p_node->attr.type = children[0]->attr.type;
+            p_node->attr.is_legal = children[0]->attr.is_legal;
         }
     }
     else if (p_node->type == StructSpecifier_SYNTAX) {
@@ -341,21 +375,44 @@ void sdt(syntax_tree_node *p_node) {
                 symbol_node *new_symbol = (symbol_node*)malloc(sizeof(symbol_node));
                 strcpy(new_symbol->key, children[1]->lchild->value.str_val);
                 new_symbol->type = Struct;
-                new_symbol->u.struct_val.structure = NULL;
                 insert_symbol(new_symbol);
                 p_node->attr.type = (Type*)malloc(sizeof(Type));
                 p_node->attr.type->kind = Structure;
-                p_node->attr.type->u.structure = NULL;
+                new_symbol->u.struct_val.structure = p_node->attr.type;
                 
                 children[3]->attr.is_in_struct = TRUE;
                 sdt(children[3]);
+                FieldList *field = children[3]->attr.structure;
+                while (field) {
+                    FieldList *pre_field = children[3]->attr.structure;
+                    while (pre_field != field) {
+                        if (strcmp(pre_field->id, field->id) == 0) {
+                            print_error(15, field->lineno, "Field redefined.");
+                            break;
+                        }
+                        pre_field = pre_field->next;
+                    }
+
+                    field = field->next;
+                }
+                p_node->attr.type->u.structure = children[3]->attr.structure;
+                p_node->attr.is_legal = TRUE;
             }
             else {
-
+                print_error(16, children[1]->lineno, "Structure redefined.");
+                p_node->attr.is_legal = FALSE;
             }
         }
         else if (child_num == 2 && children[0]->type == STRUCT_TOKEN && children[1]->type == Tag_SYNTAX) {
-
+            symbol_node *struct_node;
+            if (struct_node = get_symbol(children[1]->lchild->value.str_val)) {
+                p_node->attr.type = struct_node->u.struct_val.structure;
+                p_node->attr.is_legal = TRUE;
+            }
+            else {
+                print_error(17, children[1]->lineno, "Undefined structure");
+                p_node->attr.is_legal = FALSE;
+            }
         }
     }
     else if (p_node->type == ExtDecList_SYNTAX) {
@@ -372,6 +429,16 @@ void sdt(syntax_tree_node *p_node) {
     }
     else if (p_node->type == VarDec_SYNTAX) {
         if (child_num == 1 && children[0]->type == ID_TOKEN) {
+            p_node->attr.type = p_node->attr.inh_type;
+            p_node->attr.id = children[0]->value.str_val;
+            if (p_node->attr.is_in_struct) {
+                p_node->attr.structure = (FieldList*)malloc(sizeof(FieldList));
+                p_node->attr.structure->next = NULL;
+                p_node->attr.structure->type = p_node->attr.type;
+                p_node->attr.structure->lineno = children[0]->lineno;
+                strcpy(p_node->attr.structure->id, children[0]->value.str_val);
+                return;
+            }
             if (get_symbol(children[0]->value.str_val) == NULL) {
                 symbol_node *new_symbol = (symbol_node*)malloc(sizeof(symbol_node));
                 strcpy(new_symbol->key, children[0]->value.str_val);
@@ -382,8 +449,6 @@ void sdt(syntax_tree_node *p_node) {
             else {
                 print_error(3, children[0]->lineno, "Variable redefined.");
             }
-            p_node->attr.type = p_node->attr.inh_type;
-            p_node->attr.id = children[0]->value.str_val;
         }
         else if (child_num == 4 && children[0]->type == VarDec_SYNTAX && children[1]->type == LB_TOKEN && children[2]->type == INT_TOKEN && children[3]->type == RB_TOKEN) {
             Type *type_node = (Type*)malloc(sizeof(Type));
@@ -391,6 +456,7 @@ void sdt(syntax_tree_node *p_node) {
             type_node->u.array.elem = p_node->attr.inh_type;
             type_node->u.array.size = children[2]->value.int_val;
             children[0]->attr.inh_type = type_node;
+            children[0]->attr.is_in_struct = p_node->attr.is_in_struct;
             sdt(children[0]);
             p_node->attr.type = children[0]->attr.type;
             p_node->attr.id = children[0]->attr.id;
@@ -438,6 +504,7 @@ void sdt(syntax_tree_node *p_node) {
     }
     else if (p_node->type == CompSt_SYNTAX) {
         if (child_num == 4 && children[0]->type == LC_TOKEN && children[1]->type == DefList_SYNTAX && children[2]->type == StmtList_SYNTAX && children[3]->type == RC_TOKEN) {
+            children[1]->attr.is_in_struct = FALSE;
             sdt(children[1]);
             children[2]->attr.ret_type = p_node->attr.ret_type;
             sdt(children[2]);
@@ -456,11 +523,21 @@ void sdt(syntax_tree_node *p_node) {
     }
     else if (p_node->type == DefList_SYNTAX) {
         if (child_num == 2 && children[0]->type == Def_SYNTAX && children[1]->type == DefList_SYNTAX) {
+            children[0]->attr.is_in_struct = p_node->attr.is_in_struct;
             sdt(children[0]);
+            children[1]->attr.is_in_struct = p_node->attr.is_in_struct;
             sdt(children[1]);
+            if (p_node->attr.is_in_struct) {
+                FieldList *field = p_node->attr.structure = children[0]->attr.structure;
+                while (field->next)
+                    field = field->next;
+                field->next = children[1]->attr.structure;
+            }
         }
         else if (child_num == 0) {
-
+            if (p_node->attr.is_in_struct) {
+                p_node->attr.structure = NULL;
+            }
         }
     }
     else if (p_node->type == Stmt_SYNTAX) {

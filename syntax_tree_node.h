@@ -23,6 +23,7 @@ typedef struct {
     Type *inh_type;
     Type *type;
     unsigned char is_in_struct;
+    FieldList *structure;
     unsigned char is_legal;
     arg_node *args, *inh_args;
     char *id;
