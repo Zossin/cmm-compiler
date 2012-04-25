@@ -40,5 +40,8 @@ test6: parser test6.cmm
 test7: parser test7.cmm
 	./parser test7.cmm
 
+test8: parser test8.cmm
+	./parser test8.cmm
+
 clean:
 	rm lex.yy.c cmmyacc.tab.c cmmyacc.tab.h parser cmmyacc.output *.o

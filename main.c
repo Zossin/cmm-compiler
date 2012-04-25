@@ -16,5 +16,6 @@ int main(int argc, char **argv) {
     yyparse();
     if (!is_error_happened)
         sdt(syntax_tree_root);
+    check_undef_func();
     return 0;
 }

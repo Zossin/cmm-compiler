@@ -31,7 +31,6 @@ struct FieldList_ {
 
 typedef struct arg_node_ {
     Type *type;
-    char id[SYMBOL_NAME_LEN];
     struct arg_node_ *next;
 } arg_node;
 

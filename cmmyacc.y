@@ -42,8 +42,9 @@ ExtDefList  :   ExtDef  ExtDefList { $$ = create_syntax_tree_node("ExtDefList", 
             ;
 
 ExtDef  :   Specifier ExtDecList SEMI { $$ = create_syntax_tree_node("ExtDef", ExtDef_SYNTAX, 3, $1, $2, $3);  }
-        |   Specifier SEMI { $$ = create_syntax_tree_node("ExtDef", ExtDef_SYNTAX, 2, $1, $2);  }
-        |   Specifier FunDec CompSt { $$ = create_syntax_tree_node("ExtDef", ExtDef_SYNTAX, 3, $1, $2, $3);  }
+        |   Specifier SEMI { $$ = create_syntax_tree_node("ExtDef", ExtDef_SYNTAX, 2, $1, $2); }
+        |   Specifier FunDec CompSt { $$ = create_syntax_tree_node("ExtDef", ExtDef_SYNTAX, 3, $1, $2, $3); }
+        |   Specifier FunDec SEMI { $$ = create_syntax_tree_node("ExtDef", ExtDef_SYNTAX, 3, $1, $2, $3); }
         |   error SEMI { resume_from_error("SEMI"); }
         ;
 

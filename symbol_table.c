@@ -60,6 +60,20 @@ void insert_symbol(symbol_node *p_symbol) {
     symbol_table[index].head = new_node;
 }
 
+void check_undef_func() {
+    int i;
+    for (i = 0; i < NR_SYMBOL_TABLE; ++ i) {
+        hash_node *p_node = symbol_table[i].head;
+        while (p_node) {
+            if (p_node->data->type == Func) {
+                if (!p_node->data->u.func_val.is_defined)
+                    print_error(18, p_node->data->u.func_val.lineno, "Function undefined");
+            } 
+            p_node = p_node->next;
+        }
+    }
+}
+
 extern void sdt(syntax_tree_node *p_node);
 
 void check_type_match(syntax_tree_node *p_node, syntax_tree_node **children) {
@@ -102,9 +116,16 @@ void sdt(syntax_tree_node *p_node) {
         else if (child_num == 2 && children[0]->type == Specifier_SYNTAX && children[1]->type == SEMI_TOKEN) { 
             sdt(children[0]);
         }
+        else if (child_num == 3 && children[0]->type == Specifier_SYNTAX && children[1]->type == FunDec_SYNTAX && children[2]->type == SEMI_TOKEN) {
+            sdt(children[0]);
+            children[1]->attr.inh_type = children[0]->attr.type;
+            children[1]->attr.is_definition = FALSE;
+            sdt(children[1]);
+        }
         else if (child_num == 3 && children[0]->type == Specifier_SYNTAX && children[1]->type == FunDec_SYNTAX && children[2]->type == CompSt_SYNTAX) {
             sdt(children[0]);
             children[1]->attr.inh_type = children[0]->attr.type;
+            children[1]->attr.is_definition = TRUE;
             sdt(children[1]);
             children[2]->attr.ret_type = children[0]->attr.type;
             sdt(children[2]);
@@ -463,34 +484,80 @@ void sdt(syntax_tree_node *p_node) {
         }
     }
     else if (p_node->type == FunDec_SYNTAX) {
-        if (get_symbol(children[0]->value.str_val)) {
+        symbol_node *func_node = get_symbol(children[0]->value.str_val);
+        if (p_node->attr.is_definition && (func_node && func_node->type != Func || func_node && func_node->type == Func && func_node->u.func_val.is_defined)) {
             print_error(4, children[0]->lineno, "Function redefined.");
             return;
         }
-        symbol_node *new_symbol = (symbol_node*)malloc(sizeof(symbol_node));
-        strcpy(new_symbol->key, children[0]->value.str_val);
-        new_symbol->type= Func;
-        new_symbol->u.func_val.ret_type = p_node->attr.inh_type;
+        if (func_node == NULL) {
+            func_node = (symbol_node*)malloc(sizeof(symbol_node));
+            strcpy(func_node->key, children[0]->value.str_val);
+            func_node->type= Func;
+            func_node->u.func_val.ret_type = p_node->attr.inh_type;
+            func_node->u.func_val.lineno = p_node->lineno;
+            p_node->attr.is_declared = FALSE;
+            insert_symbol(func_node);
+        }
+        else {
+            if (!is_same_type(func_node->u.func_val.ret_type, p_node->attr.inh_type)) {
+                print_error(19, children[0]->lineno, "Return type conflict");
+            }
+            p_node->attr.is_declared = TRUE;
+        }
         if (child_num == 4 && children[0]->type == ID_TOKEN && children[1]->type == LP_TOKEN && children[2]->type == VarList_SYNTAX && children[3]->type == RP_TOKEN) {
+            if (p_node->attr.is_declared) {
+                children[2]->attr.args = func_node->u.func_val.args;
+            }
+            children[2]->attr.is_definition = p_node->attr.is_definition;
+            children[2]->attr.is_declared = p_node->attr.is_declared;
             sdt(children[2]);
-            new_symbol->u.func_val.args = children[2]->attr.args;
+            if (!p_node->attr.is_declared)
+                func_node->u.func_val.args = children[2]->attr.args;
         }
         else if (child_num == 3 && children[0]->type == ID_TOKEN && children[1]->type == LP_TOKEN && children[2]->type == RP_TOKEN) {
-            new_symbol->u.func_val.args = NULL;
+            if (p_node->attr.is_declared) {
+                if (func_node->u.func_val.args)
+                    print_error(19, children[0]->lineno, "Argument number conflict");
+            }
+            else {
+                func_node->u.func_val.args = NULL;
+            }
         }
-        insert_symbol(new_symbol);
+        if (p_node->attr.is_definition)
+            func_node->u.func_val.is_defined = TRUE;
     }
     else if (p_node->type == VarList_SYNTAX) {
+        children[0]->attr.is_declared = p_node->attr.is_declared;
+        children[0]->attr.is_definition = p_node->attr.is_definition;
+        if (p_node->attr.is_declared) {
+            if (p_node->attr.args == NULL) {
+                print_error(19, children[0]->lineno, "Argument number conflict");
+                return;
+            }
+            children[0]->attr.type = p_node->attr.args->type;
+        }
         sdt(children[0]);
-        p_node->attr.args = (arg_node*)malloc(sizeof(arg_node));
-        p_node->attr.args->type = children[0]->attr.type;
-        strcpy(p_node->attr.args->id, children[0]->attr.id);
+        if (!p_node->attr.is_declared) {
+            p_node->attr.args = (arg_node*)malloc(sizeof(arg_node));
+            p_node->attr.args->type = children[0]->attr.type;
+        }
         if (child_num == 3 && children[0]->type == ParamDec_SYNTAX && children[1]->type == COMMA_TOKEN && children[2]->type == VarList_SYNTAX) {
+            if (p_node->attr.is_declared) {
+                children[2]->attr.args = p_node->attr.args->next;
+            }
+            children[2]->attr.is_declared = p_node->attr.is_declared;
+            children[2]->attr.is_definition = p_node->attr.is_definition;
             sdt(children[2]);
-            p_node->attr.args->next = children[2]->attr.args;
+            if (!p_node->attr.is_declared)
+                p_node->attr.args->next = children[2]->attr.args;
         }
         else if (child_num == 1 && children[0]->type == ParamDec_SYNTAX) {
-            p_node->attr.args->next = NULL;
+            if (p_node->attr.is_declared) {
+                if (p_node->attr.args->next)
+                    print_error(19, children[0]->lineno, "Argument number conflict");
+            }
+            else
+                p_node->attr.args->next = NULL;
         }
     }
     else if (p_node->type == ParamDec_SYNTAX) {
@@ -498,8 +565,13 @@ void sdt(syntax_tree_node *p_node) {
             sdt(children[0]);
             children[1]->attr.inh_type = children[0]->attr.type;
             sdt(children[1]);
-            p_node->attr.type = children[1]->attr.type;
-            p_node->attr.id = children[1]->attr.id;
+            if (p_node->attr.is_declared) {
+                if (!is_same_type(p_node->attr.type, children[1]->attr.type)) {
+                    print_error(19, children[0]->lineno, "Argument type conflict");
+                }
+            }
+            else 
+                p_node->attr.type = children[1]->attr.type;
         }
     }
     else if (p_node->type == CompSt_SYNTAX) {

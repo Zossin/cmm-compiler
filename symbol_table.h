@@ -14,9 +14,10 @@ typedef struct {
 } struct_symbol;
 
 typedef struct {
-    int argc;
     arg_node *args;
     Type *ret_type;
+    unsigned char is_defined;
+    int lineno;
 } func_symbol;
 
 typedef struct {

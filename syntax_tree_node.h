@@ -28,6 +28,8 @@ typedef struct {
     arg_node *args, *inh_args;
     char *id;
     Type *ret_type;
+    unsigned char is_definition;
+    unsigned char is_declared;
 } attribute;
 
 typedef struct st_node {
