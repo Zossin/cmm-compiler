@@ -45,5 +45,10 @@ int scope_depth;
 hash_node scope_stack[MAX_SCOPE_DEPTH];
 
 unsigned int hash_pjw(char *name);
+void init_symbol_table();
+void enter_deeper_scope();
+void exit_top_scope();
+symbol_node *get_symbol(char *name);
+void insert_symbol(symbol_node *p_symbol);
 
 #endif

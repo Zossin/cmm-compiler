@@ -1,7 +1,7 @@
-parser: main.o cmmyacc.tab.o syntax_tree.o symbol_table.o
-	gcc main.o cmmyacc.tab.o syntax_tree.o symbol_table.o -lfl -ly -g -o parser 
+parser: main.o cmmyacc.tab.o syntax_tree.o symbol_table.o semantic_analysis.o type.o
+	gcc main.o cmmyacc.tab.o syntax_tree.o symbol_table.o semantic_analysis.o type.o -lfl -ly -g -o parser 
 
-main.o: main.c symbol_table.h syntax_tree_node.h common.h
+main.o: main.c symbol_table.h syntax_tree_node.h common.h semantic_analysis.h
 	gcc -g -c main.c
 
 cmmyacc.tab.o: cmmyacc.tab.c
@@ -10,8 +10,14 @@ cmmyacc.tab.o: cmmyacc.tab.c
 syntax_tree.o: syntax_tree.c syntax_tree_node.h
 	gcc -g -c syntax_tree.c
 
-symbol_table.o: symbol_table.c symbol_table.h syntax_tree_node.h common.h
+symbol_table.o: symbol_table.c symbol_table.h common.h
 	gcc -g -c symbol_table.c
+
+semantic_analysis.o: semantic_analysis.c symbol_table.h syntax_tree_node.h common.h semantic_analysis.h
+	gcc -g -c semantic_analysis.c
+
+type.o: type.c common.h
+	gcc -g -c type.c
 
 lex.yy.c: cmmlex.l
 	flex cmmlex.l
@@ -45,6 +51,18 @@ test8: parser test8.cmm
 
 test9: parser test9.cmm
 	./parser test9.cmm
+
+test10: parser test10.cmm
+	./parser test10.cmm
+
+test11: parser test11.cmm
+	./parser test11.cmm
+
+test12: parser test12.cmm
+	./parser test12.cmm
+
+test13: parser test13.cmm
+	./parser test13.cmm
 
 clean:
 	rm lex.yy.c cmmyacc.tab.c cmmyacc.tab.h parser cmmyacc.output *.o

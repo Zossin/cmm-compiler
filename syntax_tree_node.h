@@ -51,4 +51,6 @@ syntax_tree_node *create_syntax_tree_node(char *name, node_type type, int child_
 void dfs_syntax_tree(int num_of_spaces, syntax_tree_node *p_node);
 void destory_syntax_tree(syntax_tree_node *p_node);
 
+syntax_tree_node *syntax_tree_root;
+
 #endif

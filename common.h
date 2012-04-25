@@ -36,4 +36,6 @@ typedef struct arg_node_ {
 
 unsigned char is_error_happened;
 
+unsigned char is_same_type(Type *a, Type *b);
+
 #endif
