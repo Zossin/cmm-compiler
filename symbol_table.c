@@ -45,8 +45,8 @@ symbol_node *get_symbol(char *name) {
     if (p_node == NULL)
         return NULL;
     while (p_node) {
-        if (strcmp(name, p_node->data.key) == 0)
-            return &(p_node->data);
+        if (strcmp(name, p_node->data->key) == 0)
+            return p_node->data;
         p_node = p_node->next;
     }
     return NULL;
@@ -55,7 +55,7 @@ symbol_node *get_symbol(char *name) {
 void insert_symbol(symbol_node *p_symbol) {
     int index = hash_pjw(p_symbol->key);
     hash_node *new_node = (hash_node*)malloc(sizeof(hash_node));
-    new_node->data = *p_symbol;
+    new_node->data = p_symbol;
     new_node->next = symbol_table[index].head;
     symbol_table[index].head = new_node;
 }
@@ -106,6 +106,7 @@ void sdt(syntax_tree_node *p_node) {
             sdt(children[0]);
             children[1]->attr.inh_type = children[0]->attr.type;
             sdt(children[1]);
+            children[2]->attr.ret_type = children[0]->attr.type;
             sdt(children[2]);
         }
     }
@@ -433,6 +434,46 @@ void sdt(syntax_tree_node *p_node) {
             sdt(children[1]);
             p_node->attr.type = children[1]->attr.type;
             p_node->attr.id = children[1]->attr.id;
+        }
+    }
+    else if (p_node->type == CompSt_SYNTAX) {
+        if (child_num == 4 && children[0]->type == LC_TOKEN && children[1]->type == DefList_SYNTAX && children[2]->type == StmtList_SYNTAX && children[3]->type == RC_TOKEN) {
+            sdt(children[1]);
+            children[2]->attr.ret_type = p_node->attr.ret_type;
+            sdt(children[2]);
+        }
+    }
+    else if (p_node->type == StmtList_SYNTAX) {
+        if (child_num == 2 && children[0]->type == Stmt_SYNTAX && children[1]->type == StmtList_SYNTAX) {
+            children[0]->attr.ret_type = p_node->attr.ret_type;
+            sdt(children[0]);
+            children[1]->attr.ret_type = p_node->attr.ret_type;
+            sdt(children[1]);
+        }
+        else if (child_num == 0) {
+
+        }
+    }
+    else if (p_node->type == DefList_SYNTAX) {
+        if (child_num == 2 && children[0]->type == Def_SYNTAX && children[1]->type == DefList_SYNTAX) {
+            sdt(children[0]);
+            sdt(children[1]);
+        }
+        else if (child_num == 0) {
+
+        }
+    }
+    else if (p_node->type == Stmt_SYNTAX) {
+        if (child_num == 3 && children[0]->type == RETURN_TOKEN && children[1]->type == Exp_SYNTAX && children[2]->type == SEMI_TOKEN) {
+            sdt(children[1]);
+            if (!is_same_type(children[1]->attr.type, p_node->attr.ret_type)) {
+                print_error(8, children[1]->lineno, "Return type mismatched.");
+            }
+        }
+        else {
+            int i;
+            for (i = 0; i < child_num; ++ i)
+                sdt(children[i]);
         }
     }
     else {

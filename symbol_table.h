@@ -30,7 +30,7 @@ typedef struct {
 } symbol_node;
 
 typedef struct hash_node_ {
-    symbol_node data;
+    symbol_node *data;
     struct hash_node_ *next;
 } hash_node;
 

@@ -26,6 +26,7 @@ typedef struct {
     unsigned char is_legal;
     arg_node *args, *inh_args;
     char *id;
+    Type *ret_type;
 } attribute;
 
 typedef struct st_node {
