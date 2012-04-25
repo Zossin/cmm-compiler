@@ -32,14 +32,17 @@ typedef struct {
 
 typedef struct hash_node_ {
     symbol_node *data;
-    struct hash_node_ *next;
+    struct hash_node_ *prev, *next, *same_scope_next;
+    int depth;
 } hash_node;
 
-typedef struct {
-    hash_node *head;
-} hash_head;
+hash_node symbol_table[NR_SYMBOL_TABLE];
 
-hash_head symbol_table[NR_SYMBOL_TABLE];
+int scope_depth;
+
+#define MAX_SCOPE_DEPTH 20
+
+hash_node scope_stack[MAX_SCOPE_DEPTH];
 
 unsigned int hash_pjw(char *name);
 

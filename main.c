@@ -14,8 +14,10 @@ int main(int argc, char **argv) {
     is_error_happened = FALSE;
     yyrestart(f);
     yyparse();
-    if (!is_error_happened)
+    if (!is_error_happened) {
+        init_symbol_table();
         sdt(syntax_tree_root);
-    check_undef_func();
+        check_undef_func();
+    }
     return 0;
 }
