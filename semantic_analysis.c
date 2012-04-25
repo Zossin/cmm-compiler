@@ -445,6 +445,7 @@ void sdt(syntax_tree_node *p_node) {
     else if (p_node->type == FunDec_SYNTAX) {
         symbol_node *func_node = get_symbol(children[0]->value.str_val);
         if (p_node->attr.is_definition && (func_node && func_node->type != Func || func_node && func_node->type == Func && func_node->u.func_val.is_defined)) {
+            enter_deeper_scope();
             print_error(4, children[0]->lineno, "Function redefined.");
             return;
         }
@@ -460,6 +461,8 @@ void sdt(syntax_tree_node *p_node) {
         else {
             if (!is_same_type(func_node->u.func_val.ret_type, p_node->attr.inh_type)) {
                 print_error(19, children[0]->lineno, "Return type conflict");
+                enter_deeper_scope();
+                return;
             }
             p_node->attr.is_declared = TRUE;
         }
@@ -473,18 +476,27 @@ void sdt(syntax_tree_node *p_node) {
             sdt(children[2]);
             if (!p_node->attr.is_declared)
                 func_node->u.func_val.args = children[2]->attr.args;
+            else
+                p_node->attr.is_legal = children[2]->attr.is_legal;
         }
         else if (child_num == 3 && children[0]->type == ID_TOKEN && children[1]->type == LP_TOKEN && children[2]->type == RP_TOKEN) {
             if (p_node->attr.is_declared) {
-                if (func_node->u.func_val.args)
+                if (func_node->u.func_val.args) {
                     print_error(19, children[0]->lineno, "Argument number conflict");
+                    return;
+                }
             }
             else {
                 func_node->u.func_val.args = NULL;
+                p_node->attr.is_legal = TRUE;
             }
         }
-        if (p_node->attr.is_definition)
-            func_node->u.func_val.is_defined = TRUE;
+        if (p_node->attr.is_definition) {
+            if (p_node->attr.is_declared)
+                func_node->u.func_val.is_defined = p_node->attr.is_legal;
+            else
+                func_node->u.func_val.is_defined = TRUE;
+        }
     }
     else if (p_node->type == VarList_SYNTAX) {
         children[0]->attr.is_declared = p_node->attr.is_declared;
@@ -492,14 +504,20 @@ void sdt(syntax_tree_node *p_node) {
         if (p_node->attr.is_declared) {
             if (p_node->attr.args == NULL) {
                 print_error(19, children[0]->lineno, "Argument number conflict");
+                p_node->attr.is_legal = FALSE;
                 return;
             }
+            p_node->attr.is_legal = TRUE;
             children[0]->attr.type = p_node->attr.args->type;
         }
         sdt(children[0]);
         if (!p_node->attr.is_declared) {
             p_node->attr.args = (arg_node*)malloc(sizeof(arg_node));
             p_node->attr.args->type = children[0]->attr.type;
+        }
+        else {
+            if (!children[0]->attr.is_legal)
+                p_node->attr.is_legal = FALSE;
         }
         if (child_num == 3 && children[0]->type == ParamDec_SYNTAX && children[1]->type == COMMA_TOKEN && children[2]->type == VarList_SYNTAX) {
             if (p_node->attr.is_declared) {
@@ -510,6 +528,10 @@ void sdt(syntax_tree_node *p_node) {
             sdt(children[2]);
             if (!p_node->attr.is_declared)
                 p_node->attr.args->next = children[2]->attr.args;
+            else {
+                if (!children[2]->attr.is_legal)
+                    p_node->attr.is_legal = FALSE;
+            }
         }
         else if (child_num == 1 && children[0]->type == ParamDec_SYNTAX) {
             if (p_node->attr.is_declared) {
@@ -528,6 +550,7 @@ void sdt(syntax_tree_node *p_node) {
             if (p_node->attr.is_declared) {
                 if (!is_same_type(p_node->attr.type, children[1]->attr.type)) {
                     print_error(19, children[0]->lineno, "Argument type conflict");
+                    p_node->attr.is_legal = FALSE;
                 }
             }
             else 
