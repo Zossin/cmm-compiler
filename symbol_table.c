@@ -81,6 +81,7 @@ symbol_node *get_symbol(char *name) {
 void insert_symbol(symbol_node *p_symbol) {
     int index = hash_pjw(p_symbol->key);
     hash_node *new_node = (hash_node*)malloc(sizeof(hash_node));
+    p_symbol->depth = scope_depth;
     new_node->data = p_symbol;
     new_node->next = symbol_table[index].next;
     new_node->prev = &(symbol_table[index]);
@@ -152,6 +153,7 @@ void sdt(syntax_tree_node *p_node) {
             children[1]->attr.inh_type = children[0]->attr.type;
             children[1]->attr.is_definition = FALSE;
             sdt(children[1]);
+            exit_top_scope();
         }
         else if (child_num == 3 && children[0]->type == Specifier_SYNTAX && children[1]->type == FunDec_SYNTAX && children[2]->type == CompSt_SYNTAX) {
             sdt(children[0]);
@@ -160,6 +162,7 @@ void sdt(syntax_tree_node *p_node) {
             sdt(children[1]);
             children[2]->attr.ret_type = children[0]->attr.type;
             sdt(children[2]);
+            exit_top_scope();
         }
     }
     else if (p_node->type == Def_SYNTAX) {
@@ -184,15 +187,18 @@ void sdt(syntax_tree_node *p_node) {
             children[2]->attr.is_in_struct = p_node->attr.is_in_struct;
             children[2]->attr.inh_type = p_node->attr.inh_type;
             sdt(children[2]);
-            children[0]->attr.structure->next = children[2]->attr.structure;
+            if (p_node->attr.is_in_struct)
+                children[0]->attr.structure->next = children[2]->attr.structure;
         }
-        p_node->attr.structure = children[0]->attr.structure;
+        if (p_node->attr.is_in_struct)
+            p_node->attr.structure = children[0]->attr.structure;
     }
     else if (p_node->type == Dec_SYNTAX) {
         children[0]->attr.is_in_struct = p_node->attr.is_in_struct;
         children[0]->attr.inh_type = p_node->attr.inh_type;
         sdt(children[0]);
-        p_node->attr.structure = children[0]->attr.structure;
+        if (p_node->attr.is_in_struct)
+            p_node->attr.structure = children[0]->attr.structure;
         if (child_num == 1 && children[0]->type == VarDec_SYNTAX) {
 
         }
@@ -423,7 +429,8 @@ void sdt(syntax_tree_node *p_node) {
     }
     else if (p_node->type == StructSpecifier_SYNTAX) {
         if (child_num == 5 && children[0]->type == STRUCT_TOKEN && children[1]->type == OptTag_SYNTAX && children[2]->type == LC_TOKEN && children[3]->type == DefList_SYNTAX && children[4]->type == RC_TOKEN) {
-            if (get_symbol(children[1]->lchild->value.str_val) == NULL) {
+            symbol_node *struct_node = get_symbol(children[1]->lchild->value.str_val);
+            if (struct_node == NULL || struct_node && struct_node->depth < scope_depth) {
                 symbol_node *new_symbol = (symbol_node*)malloc(sizeof(symbol_node));
                 strcpy(new_symbol->key, children[1]->lchild->value.str_val);
                 new_symbol->type = Struct;
@@ -491,7 +498,8 @@ void sdt(syntax_tree_node *p_node) {
                 strcpy(p_node->attr.structure->id, children[0]->value.str_val);
                 return;
             }
-            if (get_symbol(children[0]->value.str_val) == NULL) {
+            symbol_node *var_node = get_symbol(children[0]->value.str_val);
+            if (var_node == NULL || var_node && var_node->depth < scope_depth) {
                 symbol_node *new_symbol = (symbol_node*)malloc(sizeof(symbol_node));
                 strcpy(new_symbol->key, children[0]->value.str_val);
                 new_symbol->type = Var;
@@ -535,6 +543,7 @@ void sdt(syntax_tree_node *p_node) {
             }
             p_node->attr.is_declared = TRUE;
         }
+        enter_deeper_scope();
         if (child_num == 4 && children[0]->type == ID_TOKEN && children[1]->type == LP_TOKEN && children[2]->type == VarList_SYNTAX && children[3]->type == RP_TOKEN) {
             if (p_node->attr.is_declared) {
                 children[2]->attr.args = func_node->u.func_val.args;
@@ -649,6 +658,11 @@ void sdt(syntax_tree_node *p_node) {
             if (!is_same_type(children[1]->attr.type, p_node->attr.ret_type)) {
                 print_error(8, children[1]->lineno, "Return type mismatched.");
             }
+        }
+        else if (child_num == 1 && children[0]->type == CompSt_SYNTAX) {
+            enter_deeper_scope();
+            sdt(children[0]);
+            exit_top_scope();
         }
         else {
             int i;

@@ -28,12 +28,12 @@ typedef struct {
         struct_symbol struct_val;
         func_symbol func_val;
     } u;
+    int depth;
 } symbol_node;
 
 typedef struct hash_node_ {
     symbol_node *data;
     struct hash_node_ *prev, *next, *same_scope_next;
-    int depth;
 } hash_node;
 
 hash_node symbol_table[NR_SYMBOL_TABLE];

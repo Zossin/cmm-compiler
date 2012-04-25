@@ -1,0 +1,16 @@
+float i;
+float j;
+
+int main() {
+    int i;
+    {
+        float i = j;
+        int j;
+        i = i + 2;
+        i = i + 2.0;
+        j = 2.0;
+        i = j;
+    }
+    j = 2;
+    i = i + 2;
+}
