@@ -3,6 +3,14 @@ float j;
 int a[10];
 int inc()  
 { 
+    int a[10];
+    struct a_struct {
+        int x;
+    } ss[10][9];
+    struct a_struct sss[9];
+    ss = sss;
+    ss[1] = sss;
+    ss[1][1] = sss;
     i = a[1.5];
     i = a[a[3] + 2.5];
 } 

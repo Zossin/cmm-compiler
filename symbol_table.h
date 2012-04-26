@@ -44,11 +44,22 @@ int scope_depth;
 
 hash_node scope_stack[MAX_SCOPE_DEPTH];
 
+typedef struct type_list_ {
+    Type *data;
+    struct type_list_ *next;
+} type_list;
+
+type_list type_stack[MAX_SCOPE_DEPTH];
+
+Type *p_int_type, *p_float_type;
+
 unsigned int hash_pjw(char *name);
 void init_symbol_table();
 void enter_deeper_scope();
 void exit_top_scope();
 symbol_node *get_symbol(char *name);
 void insert_symbol(symbol_node *p_symbol);
+
+void insert_type(Type *data);
 
 #endif

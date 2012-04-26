@@ -73,3 +73,11 @@ void dfs_syntax_tree(int num_of_spaces, syntax_tree_node *p_node) {
     }
     dfs_syntax_tree(num_of_spaces, p_node->next_sibling);
 }
+
+void destroy_syntax_tree(syntax_tree_node *p_node) {
+    if (p_node == NULL)
+        return;
+    destroy_syntax_tree(p_node->lchild);
+    destroy_syntax_tree(p_node->next_sibling);
+    free(p_node);
+}

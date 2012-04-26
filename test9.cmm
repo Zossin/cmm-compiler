@@ -5,12 +5,14 @@ int main() {
     int i;
     {
         float i = j;
-        int j;
+        int j, k;
+        k = 0;
         i = i + 2;
         i = i + 2.0;
         j = 2.0;
         i = j;
     }
     j = 2;
+    k = 2;
     i = i + 2;
 }
