@@ -35,7 +35,10 @@ void exit_top_scope() {
         p_node->prev->next = p_node->next;
         if (p_node->next)
             p_node->next->prev = p_node->prev;
+        hash_node *tmp_node = p_node;
         p_node = p_node->same_scope_next;
+        free(tmp_node->data);
+        free(tmp_node);
     }
     --scope_depth;
 }
