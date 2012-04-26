@@ -36,6 +36,14 @@ void exit_top_scope() {
         if (p_node->next)
             p_node->next->prev = p_node->prev;
         hash_node *tmp_node = p_node;
+        if (tmp_node->data->type == Func) {
+            arg_node *arg = tmp_node->data->u.func_val.args;
+            while (arg) {
+                arg_node *tmp_arg = arg;
+                arg = arg->next;
+                free(tmp_arg);
+            }
+        }
         p_node = p_node->same_scope_next;
         free(tmp_node->data);
         free(tmp_node);
@@ -45,6 +53,14 @@ void exit_top_scope() {
     while (p_type) {
         type_list *tmp_type = p_type;
         p_type = p_type->next;
+        if (tmp_type->data->kind == Structure) {
+            FieldList *field = tmp_type->data->u.structure;
+            while (field) {
+                FieldList *tmp_field = field;
+                field = field->next;
+                free(tmp_field);
+            }
+        }
         free(tmp_type->data);
         free(tmp_type);
     }
