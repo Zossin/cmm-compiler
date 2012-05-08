@@ -1,7 +1,7 @@
-parser: main.o cmmyacc.tab.o syntax_tree.o symbol_table.o semantic_analysis.o type.o
-	gcc main.o cmmyacc.tab.o syntax_tree.o symbol_table.o semantic_analysis.o type.o -lfl -ly -g -o parser 
+parser: main.o cmmyacc.tab.o syntax_tree.o symbol_table.o semantic_analysis.o type.o translate.o
+	gcc main.o cmmyacc.tab.o syntax_tree.o symbol_table.o semantic_analysis.o type.o translate.o -lfl -ly -g -o parser 
 
-main.o: main.c symbol_table.h syntax_tree_node.h common.h semantic_analysis.h
+main.o: main.c symbol_table.h syntax_tree_node.h common.h semantic_analysis.h translate.h
 	gcc -g -c main.c
 
 cmmyacc.tab.o: cmmyacc.tab.c
@@ -18,6 +18,9 @@ semantic_analysis.o: semantic_analysis.c symbol_table.h syntax_tree_node.h commo
 
 type.o: type.c common.h
 	gcc -g -c type.c
+
+translate.o: translate.c symbol_table.h syntax_tree_node.h common.h translate.h
+	gcc -g -c translate.c
 
 lex.yy.c: cmmlex.l
 	flex cmmlex.l

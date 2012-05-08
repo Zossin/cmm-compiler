@@ -3,6 +3,7 @@
 #include "syntax_tree_node.h"
 #include "symbol_table.h"
 #include "semantic_analysis.h"
+#include "translate.h"
 
 int main(int argc, char **argv) {
     if (argc <= 1) return 1;
@@ -31,6 +32,11 @@ int main(int argc, char **argv) {
         check_undef_func();
         exit_top_scope();
     }
+
+    if (!is_error_happened) {
+        translate();
+    }
+
     destroy_syntax_tree();
     return 0;
 }

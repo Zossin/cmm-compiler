@@ -7,6 +7,7 @@
 
 typedef struct {
     Type *type;      
+    int tmp_var_id; //for intermediate representation generating
 } var_symbol;
 
 typedef struct {
