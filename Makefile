@@ -1,7 +1,13 @@
-parser: main.o cmmyacc.tab.o syntax_tree.o symbol_table.o semantic_analysis.o type.o translate.o
-	gcc main.o cmmyacc.tab.o syntax_tree.o symbol_table.o semantic_analysis.o type.o translate.o -lfl -ly -g -o parser 
+parser: main.o cmmyacc.tab.o syntax_tree.o symbol_table.o semantic_analysis.o type.o translate.o inter_code.o
+	gcc main.o cmmyacc.tab.o syntax_tree.o symbol_table.o semantic_analysis.o type.o translate.o inter_code.o -lfl -ly -g -o parser 
 
-main.o: main.c symbol_table.h syntax_tree_node.h common.h semantic_analysis.h translate.h
+test: test_inter_code
+	./test_inter_code
+
+test_inter_code: test_inter_code.c inter_code.o common.h inter_code.h
+	gcc -g test_inter_code.c inter_code.o -o test_inter_code
+
+main.o: main.c symbol_table.h syntax_tree_node.h common.h semantic_analysis.h translate.h inter_code.h
 	gcc -g -c main.c
 
 cmmyacc.tab.o: cmmyacc.tab.c
@@ -19,8 +25,11 @@ semantic_analysis.o: semantic_analysis.c symbol_table.h syntax_tree_node.h commo
 type.o: type.c common.h
 	gcc -g -c type.c
 
-translate.o: translate.c symbol_table.h syntax_tree_node.h common.h translate.h
+translate.o: translate.c symbol_table.h syntax_tree_node.h common.h translate.h inter_code.h
 	gcc -g -c translate.c
+
+inter_code.o: inter_code.c inter_code.h
+	gcc -g -c inter_code.c
 
 lex.yy.c: cmmlex.l
 	flex cmmlex.l
@@ -68,4 +77,4 @@ test13: parser test13.cmm
 	./parser test13.cmm
 
 clean:
-	rm lex.yy.c cmmyacc.tab.c cmmyacc.tab.h parser cmmyacc.output *.o
+	rm lex.yy.c cmmyacc.tab.c cmmyacc.tab.h parser cmmyacc.output *.o test_inter_code

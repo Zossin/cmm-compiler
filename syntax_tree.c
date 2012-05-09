@@ -3,17 +3,18 @@
 #include "syntax_tree_node.h"
 #include <string.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 extern int yylineno;
 
 syntax_tree_node *create_syntax_tree_node(char *name, node_type type, int child_num, ...) {
     syntax_tree_node *p_node = (syntax_tree_node*)malloc(sizeof(syntax_tree_node));
-    p_node->lchild = p_node->next_sibling = 0;
+    p_node->lchild = p_node->next_sibling = NULL;
 
     va_list args;
     
     va_start(args, child_num);
-    syntax_tree_node *tmp_node = 0;
+    syntax_tree_node *tmp_node = NULL;
     if (child_num > 0) {
         tmp_node = p_node->lchild = va_arg(args, syntax_tree_node*);
     }
@@ -37,9 +38,9 @@ syntax_tree_node *create_syntax_tree_node(char *name, node_type type, int child_
 }
 
 void dfs_syntax_tree(int num_of_spaces, syntax_tree_node *p_node) {
-    if (p_node == 0)
+    if (p_node == NULL)
         return;
-    if (!p_node->is_token && p_node->lchild == 0) {
+    if (!p_node->is_token && p_node->lchild == NULL) {
         dfs_syntax_tree(num_of_spaces, p_node->next_sibling);
         return;
     }

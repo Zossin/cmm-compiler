@@ -25,8 +25,8 @@ void enter_deeper_scope() {
     ++ scope_depth;
     scope_stack[scope_depth].data = NULL;
     scope_stack[scope_depth].same_scope_next = NULL;
-    type_stack[scope_depth].data = NULL;
-    type_stack[scope_depth].next = NULL;
+//    type_stack[scope_depth].data = NULL;
+//    type_stack[scope_depth].next = NULL;
 }
 
 void exit_top_scope() {
@@ -49,6 +49,7 @@ void exit_top_scope() {
         free(tmp_node);
     }
 
+    /*
     type_list *p_type = type_stack[scope_depth].next;
     while (p_type) {
         type_list *tmp_type = p_type;
@@ -64,6 +65,7 @@ void exit_top_scope() {
         free(tmp_type->data);
         free(tmp_type);
     }
+    */
 
     --scope_depth;
 }
@@ -93,10 +95,12 @@ void insert_symbol(symbol_node *p_symbol) {
     scope_stack[scope_depth].same_scope_next = new_node;
 }
 
+/*
 void insert_type(Type *data) {
     type_list *new_type = (type_list*)malloc(sizeof(type_list));
     new_type->data = data;
     new_type->next = type_stack[scope_depth].next;
     type_stack[scope_depth].next = new_type;
 }
+*/
 

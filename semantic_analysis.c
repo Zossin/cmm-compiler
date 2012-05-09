@@ -347,7 +347,7 @@ void handle_StructSpecifier(int child_num, syntax_tree_node *p_node, syntax_tree
             insert_symbol(new_symbol);
             p_node->attr.type = (Type*)malloc(sizeof(Type));
             p_node->attr.type->kind = Structure;
-            insert_type(p_node->attr.type);
+            //insert_type(p_node->attr.type);
             new_symbol->u.struct_val.structure = p_node->attr.type;
 
             children[3]->attr.is_in_struct = TRUE;
@@ -428,7 +428,7 @@ void handle_VarDec(int child_num, syntax_tree_node *p_node, syntax_tree_node **c
         type_node->kind = Array;
         type_node->u.array.elem = p_node->attr.inh_type;
         type_node->u.array.size = children[2]->value.int_val;
-        insert_type(type_node);
+        //insert_type(type_node);
         children[0]->attr.inh_type = type_node;
         children[0]->attr.is_in_struct = p_node->attr.is_in_struct;
         sdt(children[0]);

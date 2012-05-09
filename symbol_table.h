@@ -7,7 +7,7 @@
 
 typedef struct {
     Type *type;      
-    int tmp_var_id; //for intermediate representation generating
+    int tmp_var_no; //for intermediate representation generating
 } var_symbol;
 
 typedef struct {
@@ -50,7 +50,7 @@ typedef struct type_list_ {
     struct type_list_ *next;
 } type_list;
 
-type_list type_stack[MAX_SCOPE_DEPTH];
+//type_list type_stack[MAX_SCOPE_DEPTH];
 
 Type *p_int_type, *p_float_type;
 
@@ -61,6 +61,6 @@ void exit_top_scope();
 symbol_node *get_symbol(char *name);
 void insert_symbol(symbol_node *p_symbol);
 
-void insert_type(Type *data);
+//void insert_type(Type *data);
 
 #endif

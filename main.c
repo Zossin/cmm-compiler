@@ -4,6 +4,7 @@
 #include "symbol_table.h"
 #include "semantic_analysis.h"
 #include "translate.h"
+#include "inter_code.h"
 
 int main(int argc, char **argv) {
     if (argc <= 1) return 1;
@@ -25,8 +26,8 @@ int main(int argc, char **argv) {
         p_int_type->u.basic = Int;
         p_float_type->u.basic = Float;
 
-        insert_type(p_int_type);
-        insert_type(p_float_type);
+        //insert_type(p_int_type);
+        //insert_type(p_float_type);
 
         sdt(syntax_tree_root);
         check_undef_func();
