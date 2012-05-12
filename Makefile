@@ -43,5 +43,14 @@ test1: parser test1.cmm
 test2: parser test2.cmm
 	./parser test2.cmm test2.ir
 
+test3: parser test3.cmm
+	./parser test3.cmm test3.ir
+
+test4: parser test4.cmm
+	./parser test4.cmm test4.ir
+
+test5: parser test5.cmm
+	./parser test5.cmm test5.ir
+
 clean:
 	rm lex.yy.c cmmyacc.tab.c cmmyacc.tab.h parser cmmyacc.output *.o test_inter_code *.ir

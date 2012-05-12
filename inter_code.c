@@ -150,6 +150,8 @@ void print_inter_code(FILE *file, InterCodeList *codes) {
                 fprintf(file, "t%d", code->u.assign.left->u.var_no);
             else if (code->u.assign.left->kind == Constant)
                 fprintf(file, "#%d", code->u.assign.left->u.value);
+            else if (code->u.assign.left->kind == Reference)
+                fprintf(file, "&t%d", code->u.assign.left->u.var_no);
             fprintf(file, "\n");
         }
         else if (code->kind == Add || code->kind == Sub || code->kind  == Mul || code->kind == Div) {

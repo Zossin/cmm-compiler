@@ -21,6 +21,25 @@ InterCodeList *code1 = translate_Exp(children[0], t1), *code2 = translate_Exp(ch
 InterCodeList *code3 = (place == NULL) ? NULL : make_code_list(gen_binop_code(operator, place, t1, t2)); \
 return link_inter_code(3, code1, code2, code3);
 
+int get_size_of(Type *type) {
+    if (type == NULL)
+        return 0;
+    if (type->kind == Basic)
+        return 4;
+    if (type->kind == Array) {
+        return type->u.array.size * get_size_of(type->u.array.elem);
+    }
+    if (type->kind == Structure) {
+        int sum = 0;
+        FieldList *structure = type->u.structure;
+        while (structure) {
+            sum += get_size_of(structure->type);
+            structure = structure->next;
+        }
+        return sum;
+    }
+}
+
 typedef struct OperandList_ OperandList;
 
 struct OperandList_ {
@@ -130,7 +149,7 @@ InterCodeList *translate_Exp(syntax_tree_node *p_node, Operand *place) {
     }
 
     if (child_num == 3 && children[0]->type == Exp_SYNTAX && children[1]->type == ASSIGNOP_TOKEN && children[2]->type == Exp_SYNTAX) {
-        Operand *t1 = new_var_op(-1), *t2 = new_temp();
+        Operand *t1 = (children[0]->lchild->next_sibling == NULL) ? new_var_op(-1) : new_addr_op(-1), *t2 = new_temp();
         InterCodeList *code1 = translate_Exp(children[0], t1), *code2 = translate_Exp(children[2], t2);
         InterCodeList *code3 = make_code_list(gen_assign_code(t1, t2));
         InterCodeList *code4 = (place == NULL) ? NULL : make_code_list(gen_assign_code(place, t1));
@@ -184,14 +203,27 @@ InterCodeList *translate_Exp(syntax_tree_node *p_node, Operand *place) {
                 return link_inter_code(2, code1, make_code_list(gen_command_code(Write, arg_list->op)));
             InterCodeList *code2 = NULL;
             while (arg_list) {
-                code2 = link_inter_code(2, make_code_list(gen_command_code(Arg, arg_list->op)), code2);
+                code2 = link_inter_code(2, code2, make_code_list(gen_command_code(Arg, arg_list->op)));
                 arg_list = arg_list->next;
             }
             return link_inter_code(3, code1, code2, make_code_list(gen_call_code(ret, children[0]->value.str_val)));
         }
     }
     else if (child_num == 4 && children[0]->type == Exp_SYNTAX && children[1]->type == LB_TOKEN && children[2]->type == Exp_SYNTAX && children[3]->type == RB_TOKEN) {
-
+        Operand *t1 = new_var_op(-1), *t2 = new_temp(), *t3 = new_temp(), *t4 = new_temp();
+        InterCodeList *code1 = translate_Exp(children[0], t1);
+        InterCodeList *code2 = translate_Exp(children[2], t2);
+        InterCodeList *code3 = make_code_list(gen_binop_code(Mul, t3, t2, new_const_op(get_size_of(p_node->attr.type))));
+        InterCodeList *code4 = make_code_list(gen_binop_code(Add, t4, t1, t3));
+        if (place == NULL)
+            return NULL;
+        else if (place->u.var_no < 0) {
+            place->u.var_no = t4->u.var_no;
+            return link_inter_code(4, code1, code2, code3, code4);
+        }
+        else {
+            return link_inter_code(5, code1, code2, code3, code4, make_code_list(gen_assign_code(place, new_addr_op(t4->u.var_no))));
+        }
     }
     else if (child_num == 3 && children[0]->type == Exp_SYNTAX && children[1]->type == DOT_TOKEN && children[2]->type == ID_TOKEN) {
 
@@ -203,10 +235,12 @@ InterCodeList *translate_Exp(syntax_tree_node *p_node, Operand *place) {
             ret = NULL;
         else if (place->u.var_no < 0) {
             ret = NULL;
+            place->kind = (p_node->attr.type->kind == Basic) ? Variable : Reference;
             place->u.var_no = var_node->u.var_val.var_op->u.var_no;
         }
-        else
+        else {
             ret = make_code_list(gen_assign_code(place, var_node->u.var_val.var_op));
+        }
         return ret;
     }
     else if (child_num == 1 && children[0]->type == INT_TOKEN) {
@@ -251,14 +285,14 @@ InterCodeList *translate_Stmt(syntax_tree_node *p_node) {
     }
     else if (child_num == 5 && children[0]->type == WHILE_TOKEN && children[1]->type == LP_TOKEN && children[2]->type == Exp_SYNTAX && children[3]->type == RP_TOKEN && children[4]->type == Stmt_SYNTAX) {
         Operand *label1 = new_label(), *label2 = new_label(), *label3 = new_label();
-        InterCodeList *code1 = translate_Cond(children[2], label1, label3);
+        InterCodeList *code1 = translate_Cond(children[2], label2, label3);
         InterCodeList *code2 = translate_Stmt(children[4]);
         return link_inter_code(6, make_code_list(gen_label_code(label1)), code1, make_code_list(gen_label_code(label2)), code2, make_code_list(gen_command_code(Goto, label1)), make_code_list(gen_label_code(label3)));
     }
     return NULL;
 }
 
-void translate_VarDec(syntax_tree_node *p_node) {
+InterCodeList *translate_VarDec(syntax_tree_node *p_node) {
     syntax_tree_node *children[NR_CHILDREN];
     syntax_tree_node *child = p_node->lchild;
     int child_num = 0;
@@ -274,12 +308,16 @@ void translate_VarDec(syntax_tree_node *p_node) {
         symbol_node *new_symbol = (symbol_node*)malloc(sizeof(symbol_node));
         strcpy(new_symbol->key, children[0]->value.str_val);
         new_symbol->type = Var;
-        new_symbol->u.var_val.type = p_node->attr.inh_type;
+        new_symbol->u.var_val.type = p_node->attr.type;
         new_symbol->u.var_val.var_op = new_temp();
         insert_symbol(new_symbol);       
+        if (p_node->attr.type->kind == Array)
+            return make_code_list(gen_dec_code(new_symbol->u.var_val.var_op, new_const_op(get_size_of(p_node->attr.type))));
+        else
+            return NULL;
     }
     else if (child_num == 4 && children[0]->type == VarDec_SYNTAX && children[1]->type == LB_TOKEN && children[2]->type == INT_TOKEN && children[3]->type == RB_TOKEN) {
-        translate_VarDec(children[0]);
+        return translate_VarDec(children[0]);
     }
 }
 
@@ -291,8 +329,7 @@ InterCodeList *translate(syntax_tree_node *p_node) {
         return translate_Stmt(p_node);
     }
     if (p_node->type == VarDec_SYNTAX) {
-        translate_VarDec(p_node);
-        return;
+        return translate_VarDec(p_node);
     }
 
     syntax_tree_node *children[NR_CHILDREN];
@@ -314,13 +351,13 @@ InterCodeList *translate(syntax_tree_node *p_node) {
     }
 
     if (p_node->type == Dec_SYNTAX) {
-        translate_VarDec(children[0]);
+        InterCodeList *code1 = translate_VarDec(children[0]);
         if (child_num == 3) { //Dec -> VarDec ASSIGNOP Exp
             Operand *op = get_symbol(children[0]->attr.id)->u.var_val.var_op;
-            return translate_Exp(children[2], op);
+            return link_inter_code(2, code1, translate_Exp(children[2], op));
         }
         else
-            return NULL;
+            return code1;
     }
 
     InterCodeList *list = NULL;
