@@ -1,5 +1,5 @@
 #ifndef _SYNTAX_TREE_NODE_H_
-#define _SYNTAX_NODE_TREE_H_
+#define _SYNTAX_TREE_NODE_H_
 
 #include "common.h"
 

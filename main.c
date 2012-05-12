@@ -7,7 +7,7 @@
 #include "inter_code.h"
 
 int main(int argc, char **argv) {
-    if (argc <= 1) return 1;
+    if (argc <= 2) return 1;
     FILE* f = fopen(argv[1], "r");
     if (!f) {
         perror(argv[1]);
@@ -28,6 +28,7 @@ int main(int argc, char **argv) {
 
         //insert_type(p_int_type);
         //insert_type(p_float_type);
+        add_read_write_func();
 
         sdt(syntax_tree_root);
         check_undef_func();
@@ -35,9 +36,17 @@ int main(int argc, char **argv) {
     }
 
     if (!is_error_happened) {
-        translate();
+        init_translate();
+        init_symbol_table();
+        enter_deeper_scope();
+
+        add_read_write_func();
+
+        print_inter_code(fopen(argv[2], "w+"), translate(syntax_tree_root));
+
+        exit_top_scope();
     }
 
-    destroy_syntax_tree();
+    destroy_syntax_tree(syntax_tree_root);
     return 0;
 }

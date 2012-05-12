@@ -150,6 +150,8 @@ BLANK   [ \t\n\r]
 	fprintf(stdout, "RELOP\n");
 #endif
     yylval = create_token_node("RELOP", RELOP_TOKEN);
+    yylval->value.str_val = (char*)malloc(yyleng + 1);
+    strcpy(yylval->value.str_val, yytext);
 	return RELOP;
 }
 

@@ -611,8 +611,10 @@ void handle_Stmt(int child_num, syntax_tree_node *p_node, syntax_tree_node **chi
     }
     else {
         int i;
-        for (i = 0; i < child_num; ++ i)
+        for (i = 0; i < child_num; ++ i) {
+            children[i]->attr.ret_type = p_node->attr.ret_type;
             sdt(children[i]);
+        }
     }
 }
 

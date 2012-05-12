@@ -21,6 +21,27 @@ void init_symbol_table() {
     }
 }
 
+void add_read_write_func() {
+    symbol_node *read_func = (symbol_node*)malloc(sizeof(symbol_node));
+    strcpy(read_func->key, "read");
+    read_func->type = Func;
+    read_func->u.func_val.ret_type = p_int_type;
+    read_func->u.func_val.args = NULL;
+    read_func->u.func_val.is_defined = TRUE;
+
+    symbol_node *write_func = (symbol_node*)malloc(sizeof(symbol_node));
+    strcpy(write_func->key, "write");
+    write_func->type = Func;
+    write_func->u.func_val.ret_type = p_int_type;
+    write_func->u.func_val.args = (arg_node*)malloc(sizeof(arg_node));
+    write_func->u.func_val.args->type = p_int_type;
+    write_func->u.func_val.args->next = NULL;
+    write_func->u.func_val.is_defined = TRUE;
+
+    insert_symbol(read_func);
+    insert_symbol(write_func);
+}
+
 void enter_deeper_scope() {
     ++ scope_depth;
     scope_stack[scope_depth].data = NULL;

@@ -2,12 +2,13 @@
 #define _SYMBOL_TABLE_H_
 
 #include "common.h"
+#include "inter_code.h"
 
 #define NR_SYMBOL_TABLE 0x4000
 
 typedef struct {
     Type *type;      
-    int tmp_var_no; //for intermediate representation generating
+    Operand *var_op; //for intermediate representation generating
 } var_symbol;
 
 typedef struct {
@@ -60,6 +61,7 @@ void enter_deeper_scope();
 void exit_top_scope();
 symbol_node *get_symbol(char *name);
 void insert_symbol(symbol_node *p_symbol);
+void add_read_write_func();
 
 //void insert_type(Type *data);
 

@@ -52,6 +52,13 @@ Operand *new_addr_op(int value);
 Operand *new_ref_op(int val_no);
 Operand *new_lbl_op(int val_no);
 
+int temp_now;
+int label_now;
+Operand *new_temp();
+Operand *new_label();
+
+void init_translate();
+
 InterCodeList *link_inter_code(int n, ...);
 InterCodeList *make_code_list(InterCode *code);
 

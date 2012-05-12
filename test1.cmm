@@ -1,27 +1,8 @@
-int i, j;
-float i;
-
-struct a {
-    int i, j;
-};
-
-struct b {
-    int x;
-    int y;
-};
-
-struct c {
-    float z;
-};
-
-int main() 
-{ 
-    int i = 1;  
-    int j = -i;
-    float i;
-    struct a x;
-    struct b y;
-    struct c z;
-    x = y;
-    z = x;
-} 
+int main() {
+    int n;
+    n = read();
+    if (n > 0) write(1);
+    else if (n < 0) write(-1);
+    else write(0);
+    return 0;
+}

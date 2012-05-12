@@ -2,7 +2,7 @@ parser: main.o cmmyacc.tab.o syntax_tree.o symbol_table.o semantic_analysis.o ty
 	gcc main.o cmmyacc.tab.o syntax_tree.o symbol_table.o semantic_analysis.o type.o translate.o inter_code.o -lfl -ly -g -o parser 
 
 test: test_inter_code
-	./test_inter_code
+	./test_inter_code test.ir
 
 test_inter_code: test_inter_code.c inter_code.o common.h inter_code.h
 	gcc -g test_inter_code.c inter_code.o -o test_inter_code
@@ -38,43 +38,10 @@ cmmyacc.tab.c: cmmyacc.y lex.yy.c syntax_tree_node.h
 	bison -dv cmmyacc.y
 
 test1: parser test1.cmm
-	./parser test1.cmm
+	./parser test1.cmm test1.ir
 
 test2: parser test2.cmm
-	./parser test2.cmm
-
-test3: parser test3.cmm
-	./parser test3.cmm
-
-test4: parser test4.cmm
-	./parser test4.cmm
-
-test5: parser test5.cmm
-	./parser test5.cmm
-
-test6: parser test6.cmm
-	./parser test6.cmm
-
-test7: parser test7.cmm
-	./parser test7.cmm
-
-test8: parser test8.cmm
-	./parser test8.cmm
-
-test9: parser test9.cmm
-	./parser test9.cmm
-
-test10: parser test10.cmm
-	./parser test10.cmm
-
-test11: parser test11.cmm
-	./parser test11.cmm
-
-test12: parser test12.cmm
-	./parser test12.cmm
-
-test13: parser test13.cmm
-	./parser test13.cmm
+	./parser test2.cmm test2.ir
 
 clean:
-	rm lex.yy.c cmmyacc.tab.c cmmyacc.tab.h parser cmmyacc.output *.o test_inter_code
+	rm lex.yy.c cmmyacc.tab.c cmmyacc.tab.h parser cmmyacc.output *.o test_inter_code *.ir

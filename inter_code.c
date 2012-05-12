@@ -143,7 +143,7 @@ void print_inter_code(FILE *file, InterCodeList *codes) {
         else if (code->kind == Assign) {
             if (code->u.assign.right->kind == Address)
                 fprintf(file, "*");
-            fprintf(file, "t%d = ", code->u.assign.right->u.var_no);
+            fprintf(file, "t%d := ", code->u.assign.right->u.var_no);
             if (code->u.assign.left->kind == Address)
                 fprintf(file, "*t%d", code->u.assign.left->u.var_no);
             else if (code->u.assign.left->kind == Variable)
@@ -162,6 +162,8 @@ void print_inter_code(FILE *file, InterCodeList *codes) {
             else if (code->u.binop.op1->kind == Constant)
                 fprintf(file, "#%d", code->u.binop.op1->u.value);
 
+            fprintf(file, " ");
+
             if (code->kind == Add)
                 fprintf(file, "+");
             else if (code->kind == Sub)
@@ -171,12 +173,14 @@ void print_inter_code(FILE *file, InterCodeList *codes) {
             else if (code->kind == Div)
                 fprintf(file, "/");
 
+            fprintf(file, " ");
+
             if (code->u.binop.op2->kind == Reference)
                 fprintf(file, "&t%d", code->u.binop.op2->u.var_no);
-            else if (code->u.binop.op1->kind == Variable)
-                fprintf(file, "t%d", code->u.binop.op1->u.var_no);
-            else if (code->u.binop.op1->kind == Constant)
-                fprintf(file, "#%d", code->u.binop.op1->u.value);
+            else if (code->u.binop.op2->kind == Variable)
+                fprintf(file, "t%d", code->u.binop.op2->u.var_no);
+            else if (code->u.binop.op2->kind == Constant)
+                fprintf(file, "#%d", code->u.binop.op2->u.value);
 
             fprintf(file, "\n");
         }
@@ -248,4 +252,16 @@ void print_inter_code(FILE *file, InterCodeList *codes) {
 
         tmp = tmp->next;
     } while (tmp != codes);
+}
+
+Operand *new_temp() {
+    return new_var_op(temp_now ++);
+}
+
+Operand *new_label() {
+    return new_lbl_op(label_now ++);
+}
+
+void init_translate() {
+    temp_now = label_now = 0;
 }

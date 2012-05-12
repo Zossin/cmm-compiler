@@ -1,6 +1,11 @@
 #include "common.h"
+#include <stdlib.h>
 
 unsigned char is_same_type(Type *a, Type *b) {
+    if (a == NULL && b == NULL)
+        return TRUE;
+    if (a == NULL || b == NULL)
+        return FALSE;
     if (a->kind != b->kind)
         return FALSE;
     if (a->kind == Basic)
