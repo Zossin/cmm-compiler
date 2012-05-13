@@ -9,6 +9,7 @@
 typedef struct {
     Type *type;      
     Operand *var_op; //for intermediate representation generating
+    unsigned char is_param;
 } var_symbol;
 
 typedef struct {

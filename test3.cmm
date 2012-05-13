@@ -9,6 +9,6 @@ int sum(int n) {
 
 int main() {
     int x = read();
-    write(sum(x));
+    write(sum(x + 1 - 1));
     return 0;
 }

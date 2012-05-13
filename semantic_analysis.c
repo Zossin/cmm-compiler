@@ -432,6 +432,7 @@ void handle_VarDec(int child_num, syntax_tree_node *p_node, syntax_tree_node **c
         children[0]->attr.inh_type = type_node;
         children[0]->attr.is_in_struct = p_node->attr.is_in_struct;
         sdt(children[0]);
+        p_node->attr.structure = children[0]->attr.structure;
         p_node->attr.type = children[0]->attr.type;
         p_node->attr.id = children[0]->attr.id;
     }

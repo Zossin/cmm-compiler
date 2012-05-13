@@ -1,0 +1,11 @@
+struct ComplexStruct {
+    int x[2];
+    int y[3][4];
+};
+
+int main() {
+    struct ComplexStruct a[10];
+    a[1 + 8].y[1 + 1][1 + 1 + 1] = read();
+    write(a[4 + 5].y[0 + 2][3 + 0]);
+    return 0;
+}

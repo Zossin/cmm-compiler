@@ -58,29 +58,19 @@ InterCodeList *translate_Args(syntax_tree_node *p_node, OperandList **p_arg_list
         child = child->next_sibling;
     }
 
-    if (child_num == 1 && children[0]->type == Exp_SYNTAX) {
-        Operand *t1 = new_temp();
-        InterCodeList *code1 = translate_Exp(children[0], t1);
+    Operand *t1 = new_temp();
+    InterCodeList *code1 = translate_Exp(children[0], t1);
 
-        //arg_list = t1 + arg_list
-        OperandList *new_node = (OperandList*)malloc(sizeof(OperandList));
-        new_node->op = t1;
-        new_node->next = *p_arg_list;
-        *p_arg_list = new_node;
-        
+    //arg_list = t1 + arg_list
+    OperandList *new_node = (OperandList*)malloc(sizeof(OperandList));
+    new_node->op = t1;
+    new_node->next = *p_arg_list;
+    *p_arg_list = new_node;
+
+    if (child_num == 1 && children[0]->type == Exp_SYNTAX) {
         return code1;
     }
     else if (child_num == 3 && children[0]->type == Exp_SYNTAX && children[1]->type == COMMA_TOKEN && children[2]->type == Args_SYNTAX) {
-        Operand *t1 = new_temp();
-        InterCodeList *code1 = translate_Exp(children[0], t1);
-        
-
-        //arg_list = t1 + arg_list
-        OperandList *new_node = (OperandList*)malloc(sizeof(OperandList));
-        new_node->op = t1;
-        new_node->next = *p_arg_list;
-        *p_arg_list = new_node;
-
         InterCodeList *code2 = translate_Args(children[2], p_arg_list);
         return link_inter_code(2, code1, code2);
     }
@@ -216,7 +206,7 @@ InterCodeList *translate_Exp(syntax_tree_node *p_node, Operand *place) {
         InterCodeList *code3 = make_code_list(gen_binop_code(Mul, t3, t2, new_const_op(get_size_of(p_node->attr.type))));
         InterCodeList *code4 = make_code_list(gen_binop_code(Add, t4, t1, t3));
         if (place == NULL)
-            return NULL;
+            return link_inter_code(4, code1, code2, code3, code4);
         else if (place->u.var_no < 0) {
             place->u.var_no = t4->u.var_no;
             return link_inter_code(4, code1, code2, code3, code4);
@@ -226,7 +216,28 @@ InterCodeList *translate_Exp(syntax_tree_node *p_node, Operand *place) {
         }
     }
     else if (child_num == 3 && children[0]->type == Exp_SYNTAX && children[1]->type == DOT_TOKEN && children[2]->type == ID_TOKEN) {
+        Operand *t1 = new_var_op(-1), *t2 = new_temp();
+        InterCodeList *code1 = translate_Exp(children[0], t1);
 
+        int size_start = 0;
+        FieldList *field = children[0]->attr.type->u.structure;
+        while (field) {
+            if (strcmp(field->id, children[2]->value.str_val) == 0)
+                break;
+            size_start += get_size_of(field->type);
+            field = field->next;
+        }
+
+        InterCodeList *code2 = make_code_list(gen_binop_code(Add, t2, t1, new_const_op(size_start)));
+        if (place == NULL)
+            return link_inter_code(2, code1, code2);
+        else if (place->u.var_no < 0) {
+            place->u.var_no = t2->u.var_no;
+            return link_inter_code(2, code1, code2);
+        }
+        else {
+            return link_inter_code(3, code1, code2, make_code_list(gen_assign_code(place, new_addr_op(t2->u.var_no))));
+        }
     }
     else if (child_num == 1 && children[0]->type == ID_TOKEN) {
         symbol_node *var_node = get_symbol(children[0]->value.str_val);
@@ -235,11 +246,19 @@ InterCodeList *translate_Exp(syntax_tree_node *p_node, Operand *place) {
             ret = NULL;
         else if (place->u.var_no < 0) {
             ret = NULL;
-            place->kind = (p_node->attr.type->kind == Basic) ? Variable : Reference;
+            if (p_node->attr.type->kind == Basic)
+                place->kind = Variable;
+            else if (var_node->u.var_val.is_param)
+                place->kind = Variable;
+            else
+                place->kind = Reference;
             place->u.var_no = var_node->u.var_val.var_op->u.var_no;
         }
         else {
-            ret = make_code_list(gen_assign_code(place, var_node->u.var_val.var_op));
+            if (p_node->attr.type->kind == Basic)
+                ret = make_code_list(gen_assign_code(place, var_node->u.var_val.var_op));
+            else
+                ret = make_code_list(gen_assign_code(place, new_ref_op(var_node->u.var_val.var_op->u.var_no)));
         }
         return ret;
     }
@@ -303,13 +322,14 @@ InterCodeList *translate_VarDec(syntax_tree_node *p_node) {
 
     if (child_num == 1 && children[0]->type == ID_TOKEN) {
         if (p_node->attr.is_in_struct) {
-            return;
+            return NULL;
         }
         symbol_node *new_symbol = (symbol_node*)malloc(sizeof(symbol_node));
         strcpy(new_symbol->key, children[0]->value.str_val);
         new_symbol->type = Var;
         new_symbol->u.var_val.type = p_node->attr.type;
         new_symbol->u.var_val.var_op = new_temp();
+        new_symbol->u.var_val.is_param = FALSE;
         insert_symbol(new_symbol);       
         if (p_node->attr.type->kind == Array)
             return make_code_list(gen_dec_code(new_symbol->u.var_val.var_op, new_const_op(get_size_of(p_node->attr.type))));
@@ -342,7 +362,9 @@ InterCodeList *translate(syntax_tree_node *p_node) {
 
     if (p_node->type == ParamDec_SYNTAX) {
         translate_VarDec(children[1]);
-        return make_code_list(gen_command_code(Param, get_symbol(children[1]->attr.id)->u.var_val.var_op));
+        symbol_node *var_node = get_symbol(children[1]->attr.id);
+        var_node->u.var_val.is_param = TRUE;
+        return make_code_list(gen_command_code(Param, var_node->u.var_val.var_op));
     }
 
     if (p_node->type == FunDec_SYNTAX) {
