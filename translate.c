@@ -367,6 +367,19 @@ InterCodeList *translate(syntax_tree_node *p_node) {
         return make_code_list(gen_command_code(Param, var_node->u.var_val.var_op));
     }
 
+    if (p_node->type == ExtDef_SYNTAX && child_num == 3 && children[0]->type == Specifier_SYNTAX && children[1]->type == FunDec_SYNTAX && children[2]->type == CompSt_SYNTAX) {
+        InterCodeList *code1 = translate(children[0]);
+        enter_deeper_scope();
+        InterCodeList *code2 = translate(children[1]), *code3 = translate(children[2]);
+        exit_top_scope();
+        return link_inter_code(3, code1, code2, code3);
+    }
+    if (p_node->type == CompSt_SYNTAX) {
+        enter_deeper_scope();
+        InterCodeList *code1 = translate(children[1]), *code2 = translate(children[2]);
+        exit_top_scope();
+        return link_inter_code(2, code1, code2);
+    }
     if (p_node->type == FunDec_SYNTAX) {
         syntax_tree_node *args = (child_num == 3) ? NULL : children[2];
         return link_inter_code(2, make_code_list(gen_func_code(children[0]->value.str_val)), translate(args));
