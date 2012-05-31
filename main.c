@@ -5,6 +5,7 @@
 #include "semantic_analysis.h"
 #include "translate.h"
 #include "inter_code.h"
+#include "gen_code.h"
 
 int main(int argc, char **argv) {
     if (argc <= 2) return 1;
@@ -42,9 +43,10 @@ int main(int argc, char **argv) {
 
         add_read_write_func();
 
-        print_inter_code(fopen(argv[2], "w+"), translate(syntax_tree_root));
+        gen_code(fopen(argv[2], "w+"), translate(syntax_tree_root));
 
         exit_top_scope();
+
     }
 
     destroy_syntax_tree(syntax_tree_root);
