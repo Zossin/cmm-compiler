@@ -21,6 +21,7 @@ var_node *get_var_node(int var_id) {
             return p_node;
         p_node = p_node->next;
     }
+    return NULL;
 }
 
 void insert_var_node(int var_id, BOOL is_param_reg, int offset) {

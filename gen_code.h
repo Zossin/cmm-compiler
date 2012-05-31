@@ -11,6 +11,8 @@ void gen_code(FILE *file, InterCodeList *codes);
 
 int offset_now;
 
+#define CONST_TEMP_REG 1000000
+
 typedef struct {
     int var_id;
     BOOL is_modified;

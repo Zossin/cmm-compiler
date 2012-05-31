@@ -30,24 +30,36 @@
 "\tjr $ra\n"\
 "\n"
 
+char *reg_names[] = {"$s0", "$s1", "$s2", "$s3", "$s4", "$s5", "$s6", "$s7", "$t0", "$t1", "$t2", "$t3", "$t4", "$t5", "$t6", "$t7", "$t8", "$t9", "$a0", "$a1", "$a2", "$a3"};
+
 char *print_reg(int reg_id) {
-    char *buffer = (char*)malloc(4);
-    sprintf(buffer, "$%s%d", reg_id < 8 ? "t" : "s", reg_id < 8 ? reg_id : reg_id - 8);
-    return buffer;
+    return reg_names[reg_id];
 }
 
 void spill_reg(FILE *file, int reg_id) {
+    if (reg_id >= NR_REGS)
+        return;
     var_node *p_var = get_var_node(regs[reg_id].var_id);
+    if (p_var->is_param_reg)
+        return;
     fprintf(file, "\tsw %s, %d($fp)\n", print_reg(reg_id), -p_var->offset - 4);
 }
 
 void free_reg(FILE *file, int reg_id) {
+    if (reg_id >= NR_REGS)
+        return;
     if (regs[reg_id].var_id < 0)
         return;
     if (regs[reg_id].is_modified) {
         spill_reg(file, reg_id);
     }
     regs[reg_id].var_id = -1;
+}
+
+void set_reg_modified(int reg_id) {
+    if (reg_id >= NR_REGS)
+        return;
+    regs[reg_id].is_modified = TRUE;
 }
 
 int allocate_reg(FILE *file, int var_id) {
@@ -66,6 +78,13 @@ int allocate_reg(FILE *file, int var_id) {
     return 0;
 }
 
+int store_const_into_reg(FILE *file, int val) {
+    int reg = allocate_reg(file, CONST_TEMP_REG);
+    fprintf(file, "\tli %s, %d\n", print_reg(reg), val);
+
+    return reg;
+}
+
 int ensure_reg(FILE *file, int var_id) {
     var_node *p_var = get_var_node(var_id);
 
@@ -73,7 +92,7 @@ int ensure_reg(FILE *file, int var_id) {
         return -1;
 
     if (p_var->is_param_reg)
-        return p_var->offset;
+        return NR_REGS + p_var->offset;
     
     int i;
     for (i = 0; i < NR_REGS; ++ i)
@@ -82,6 +101,8 @@ int ensure_reg(FILE *file, int var_id) {
 
     int reg = allocate_reg(file, var_id);
     fprintf(file, "\tlw %s, %d($fp)\n", print_reg(reg), -p_var->offset - 4);
+
+    return reg;
 }
 
 void print_mips_code(FILE *file, InterCodeList *codes) {
@@ -91,7 +112,42 @@ void print_mips_code(FILE *file, InterCodeList *codes) {
         fprintf(file, "label%d :\n", code->u.label.dest->u.var_no);
     else if (code->kind == Assign) {
         if (code->u.assign.right->kind == Variable && code->u.assign.left->kind == Constant) {
-            fprintf(file, "");
+            int regx = allocate_reg(file, code->u.assign.right->u.var_no);
+            fprintf(file, "\tli %s, %d\n", print_reg(regx), code->u.assign.left->u.value);
+            set_reg_modified(regx);
+            free_reg(file, regx);
+        }
+        else if (code->u.assign.right->kind == Variable && code->u.assign.left->kind == Variable) {
+            int regy = ensure_reg(file, code->u.assign.left->u.var_no);
+            int regx = allocate_reg(file, code->u.assign.right->u.var_no);
+            fprintf(file, "\tmove %s, %s\n", print_reg(regx), print_reg(regy));
+            set_reg_modified(regx);
+            free_reg(file, regx);
+            free_reg(file, regy);
+        }
+        else if (code->u.assign.right->kind == Variable && code->u.assign.left->kind == Address) {
+            int regx, regy;
+
+            regx = ensure_reg(file, code->u.assign.right->u.var_no);
+            regy = ensure_reg(file, code->u.assign.left->u.var_no);
+
+            free_reg(file, regx);free_reg(file, regy);
+
+            fprintf(file, "\tlw %s, 0(%s)\n", print_reg(regx), print_reg(regy));
+        }
+        else if (code->u.assign.right->kind == Address) {
+            int regx, regy;
+
+            if (code->u.assign.left->kind == Variable)
+                regy = ensure_reg(file, code->u.assign.left->u.var_no);
+            else if (code->u.assign.left->kind == Constant)
+                regy = store_const_into_reg(file, code->u.assign.left->u.var_no);
+
+            regx = ensure_reg(file, code->u.assign.right->u.var_no);
+
+            free_reg(file, regx);free_reg(file, regy);
+
+            fprintf(file, "\tsw %s, 0(%s)\n", print_reg(regy), print_reg(regx));
         }
         else {
             fprintf(file, "\tUnexpected assign inter code!\n");
@@ -99,82 +155,95 @@ void print_mips_code(FILE *file, InterCodeList *codes) {
 
     }
     else if (code->kind == Add || code->kind == Sub || code->kind  == Mul || code->kind == Div) {
-        fprintf(file, "t%d := ", code->u.binop.result->u.var_no);
+        if (code->kind == Add && code->u.binop.op1->kind == Reference) {
+            var_node *p_var = get_var_node(code->u.binop.op1->u.var_no);
+            int regx = allocate_reg(file, code->u.binop.result->u.var_no);
+            fprintf(file, "\taddi %s, $fp, %d\n", print_reg(regx), -p_var->offset - code->u.binop.op2->u.value);
+            set_reg_modified(regx);
+            free_reg(file, regx);
+        }
+        else {
+            int regy, regz;
 
-        if (code->u.binop.op1->kind == Reference)
-            fprintf(file, "&t%d", code->u.binop.op1->u.var_no);
-        else if (code->u.binop.op1->kind == Variable)
-            fprintf(file, "t%d", code->u.binop.op1->u.var_no);
-        else if (code->u.binop.op1->kind == Constant)
-            fprintf(file, "#%d", code->u.binop.op1->u.value);
+            if (code->u.binop.op1->kind == Constant)
+                regy = store_const_into_reg(file, code->u.binop.op1->u.value);
+            else if (code->u.binop.op1->kind == Variable)
+                regy = ensure_reg(file, code->u.binop.op1->u.var_no);
 
-        fprintf(file, " ");
+            if (code->u.binop.op2->kind == Constant)
+                regz = store_const_into_reg(file, code->u.binop.op2->u.value);
+            else if (code->u.binop.op2->kind == Variable)
+                regz = ensure_reg(file, code->u.binop.op2->u.var_no);
 
-        if (code->kind == Add)
-            fprintf(file, "+");
-        else if (code->kind == Sub)
-            fprintf(file, "-");
-        else if (code->kind == Mul)
-            fprintf(file, "*");
-        else if (code->kind == Div)
-            fprintf(file, "/");
+            free_reg(file, regy);free_reg(file, regz);
 
-        fprintf(file, " ");
+            int regx = allocate_reg(file, code->u.binop.result->u.var_no);
 
-        if (code->u.binop.op2->kind == Reference)
-            fprintf(file, "&t%d", code->u.binop.op2->u.var_no);
-        else if (code->u.binop.op2->kind == Variable)
-            fprintf(file, "t%d", code->u.binop.op2->u.var_no);
-        else if (code->u.binop.op2->kind == Constant)
-            fprintf(file, "#%d", code->u.binop.op2->u.value);
+            if (code->kind == Add)
+                fprintf(file, "\tadd %s, %s, %s\n", print_reg(regx), print_reg(regy), print_reg(regz));
+            else if (code->kind == Sub)
+                fprintf(file, "\tsub %s, %s, %s\n", print_reg(regx), print_reg(regy), print_reg(regz));
+            else if (code->kind == Mul)
+                fprintf(file, "\tmul %s, %s, %s\n", print_reg(regx), print_reg(regy), print_reg(regz));
+            else if (code->kind == Div) {
+                fprintf(file, "\tdiv %s, %s\n", print_reg(regy), print_reg(regz));
+                fprintf(file, "\tmflo %s\n", print_reg(regx));
+            }
 
-        fprintf(file, "\n");
+            set_reg_modified(regx);
+            free_reg(file, regx);
+        }
     }
     else if (IS_RELOP(code)) {
-        fprintf(file, "IF ");
+        int regx, regy;
 
-        if (code->u.binop.op1->kind == Variable)
-            fprintf(file, "t%d", code->u.binop.op1->u.var_no);
-        else if (code->u.binop.op1->kind == Constant)
-            fprintf(file, "#%d", code->u.binop.op1->u.value);
+        if (code->u.binop.op1->kind == Constant)
+            regx = store_const_into_reg(file, code->u.binop.op1->u.value);
+        else if (code->u.binop.op1->kind == Variable)
+            regx = ensure_reg(file, code->u.binop.op1->u.var_no);
 
-        fprintf(file, " ");
+        if (code->u.binop.op2->kind == Constant)
+            regy = store_const_into_reg(file, code->u.binop.op2->u.value);
+        else if (code->u.binop.op2->kind == Variable)
+            regy = ensure_reg(file, code->u.binop.op2->u.var_no);
+
+        free_reg(file, regx);free_reg(file, regy);
+
+        fprintf(file, "\t");
 
         if (code->kind == Equal)
-            fprintf(file, "==");
+            fprintf(file, "beq");
         else if (code->kind == NotEqual)
-            fprintf(file, "!=");
+            fprintf(file, "bne");
         else if (code->kind == More)
-            fprintf(file, ">");
+            fprintf(file, "bgt");
         else if (code->kind == Less)
-            fprintf(file, "<");
+            fprintf(file, "blt");
         else if (code->kind == MoreEqual)
-            fprintf(file, ">=");
+            fprintf(file, "bge");
         else if (code->kind == LessEqual)
-            fprintf(file, "<=");
+            fprintf(file, "ble");
 
-        fprintf(file, " ");
 
-        if (code->u.binop.op2->kind == Variable)
-            fprintf(file, "t%d", code->u.binop.op2->u.var_no);
-        else if (code->u.binop.op2->kind == Constant)
-            fprintf(file, "#%d", code->u.binop.op2->u.value);
-
-        fprintf(file, " GOTO label%d\n", code->u.binop.result->u.var_no);
+        fprintf(file, " %s, %s, label%d\n", print_reg(regx), print_reg(regy), code->u.binop.result->u.var_no);
 
     }
     else if (code->kind == Return) {
-        fprintf(file, "RETURN ");
-        if (code->u.command.op->kind == Variable)
-            fprintf(file, "t%d", code->u.command.op->u.var_no);
-        else if (code->u.command.op->kind == Constant)
-            fprintf(file, "#%d", code->u.command.op->u.value);
-        fprintf(file, "\n");
+        int regx;
+
+        if (code->u.command.op->kind == Constant)
+            regx = store_const_into_reg(file, code->u.command.op->u.value);
+        else if (code->u.command.op->kind == Variable)
+            regx = ensure_reg(file, code->u.command.op->u.var_no);
+
+        free_reg(file, regx);
+        
+        fprintf(file, "\tmove $v0, %s\n", print_reg(regx));
+        fprintf(file, "\tjr $ra\n");
     }
-    else if (code->kind == Goto) 
-        fprintf(file, "GOTO label%d\n", code->u.command.op->u.var_no);
-    else if (code->kind == Dec) 
-        fprintf(file, "DEC t%d %d\n", code->u.dec.addr->u.var_no, code->u.dec.size->u.value);
+    else if (code->kind == Goto) {
+        fprintf(file, "\tj label%d\n", code->u.command.op->u.var_no);
+    }
     else if (code->kind == Arg) {
         fprintf(file, "ARG ");
 
@@ -187,14 +256,30 @@ void print_mips_code(FILE *file, InterCodeList *codes) {
 
         fprintf(file, "\n");
     } 
-    else if (code->kind == Call) 
-        fprintf(file, "t%d := CALL %s\n", code->u.call.result->u.var_no, code->u.call.func_name);
-    else if (code->kind == Param)
-        fprintf(file, "PARAM t%d\n", code->u.command.op->u.var_no);
-    else if (code->kind == Read)
-        fprintf(file, "READ t%d\n", code->u.command.op->u.var_no);
-    else if (code->kind == Write)
-        fprintf(file, "WRITE t%d\n", code->u.command.op->u.var_no);
+    else if (code->kind == Call) {
+        fprintf(file, "\tjal %s\n", code->u.call.func_name);
+        int regx = allocate_reg(file, code->u.call.result->u.var_no);
+        fprintf(file, "\tmove %s, $v0\n", print_reg(regx));
+        set_reg_modified(regx);
+        free_reg(file, regx);
+    }
+    else if (code->kind == Read) {
+        int regx = allocate_reg(file, code->u.command.op->u.var_no);
+        fprintf(file, "\tjal read\n");
+        fprintf(file, "\tmove %s, $v0\n", print_reg(regx));
+        set_reg_modified(regx);
+        free_reg(file, regx);
+    }
+    else if (code->kind == Write) {
+        int regx;
+        if (code->u.command.op->kind == Variable)
+            regx = ensure_reg(file, code->u.command.op->u.var_no);
+        else if (code->u.command.op->kind == Constant)
+            regx = store_const_into_reg(file, code->u.command.op->u.value);
+        free_reg(file, regx);
+        fprintf(file, "\tmove $a0, %s\n", print_reg(regx));
+        fprintf(file, "\tjal write\n");
+    }
 
 }
 
@@ -233,13 +318,28 @@ void init_func_var(FILE *file, InterCodeList *codes) {
         fprintf(file, "%s:\n", codes->code->u.func.func_name);
 
         codes = codes->next;
+        
+        int param_num = 0;
 
         while (codes && codes->code->kind != FunCode) {
             InterCode *code = codes->code;
-            
-            if (code->kind == Add || code->kind == Sub || code->kind == Mul || code->kind == Div) {
+            if (code->kind == Param) {
+                if (param_num < 4) {
+                    insert_var_node(code->u.command.op->u.var_no, TRUE, param_num);
+                }
+                else {
+                    insert_var_node(code->u.command.op->u.var_no, FALSE, -param_num * 4);
+                }
+                ++ param_num;
+            }
+            else if (code->kind == Add || code->kind == Sub || code->kind == Mul || code->kind == Div) {
                 if (code->u.binop.result->kind == Variable) {
                     ensure_var(code->u.binop.result->u.var_no, 4);
+                }
+            }
+            else if (code->kind == Assign) {
+                if (code->u.assign.right->kind == Variable) {
+                    ensure_var(code->u.assign.right->u.var_no, 4);
                 }
             }
             else if (code->kind == Read) {
@@ -257,12 +357,12 @@ void init_func_var(FILE *file, InterCodeList *codes) {
 
     fprintf(file, "\tsw $ra, -4($sp)\n");
     fprintf(file, "\tsw $fp, -8($sp)\n");
-    fprintf(file, "\tsubu $fp, -8($sp)\n");
-    fprintf(file, "\tsubu $sp, %d($sp)\n", -8 - offset_now);
+    fprintf(file, "\taddi $fp, $sp, -8\n");
+    fprintf(file, "\tsubu $sp, $sp, %d\n", -8 - offset_now);
 }
 
 void end_of_func(FILE *file) {
-    fprintf(file, "\taddi $sp, 8($fp)\n");
+    fprintf(file, "\taddi $sp, $fp, 8\n");
     fprintf(file, "\tlw $ra, -4($sp)\n");
     fprintf(file, "\tlw $fp, -8($sp)\n");
     fprintf(file, "\n");
@@ -288,7 +388,6 @@ InterCodeList *codes_next(FILE *file, InterCodeList *codes) {
         }
 
         init_func_var(file, ret);
-        ret = ret->next;
     }
 
     if (ret && is_first_instr(ret)) {
