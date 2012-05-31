@@ -1,11 +1,28 @@
-struct ComplexStruct {
-    int x[2];
-    int y[3][4];
-};
+int try(int c, int d) {
+    write(c);
+    write(d);
+    return 0;
+}
+
+int test(int a, int b) {
+
+    write(read());
+    write(read());
+
+    try(a, b);
+
+    write(a);
+    write(b);
+
+    return 0;
+}
 
 int main() {
-    struct ComplexStruct a[10];
-    a[1 + 8].y[1 + 1][1 + 1 + 1] = read();
-    write(a[4 + 5].y[0 + 2][3 + 0]);
+    int x, y;
+    x = read();
+    y = read();
+
+    test(x, y);
+
     return 0;
 }

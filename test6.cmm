@@ -1,28 +1,13 @@
-int max(int a[2][3]) {
-    int max = a[0][0], i = 0, j = 0, n = 2, m = 3;
-    while (i < n) {
-        while (j < m) {
-            if (a[i][j] > max)
-                max = a[i][j];
-            j = j + 1;
-        }
-        i = i + 1;
-        j = 0;
-    }
-    return max; 
+int test(int a, int b, int c, int d, int e, int f) {
+    write(a);
+    write(b);
+    write(c);
+    write(d);
+    write(e);
+    write(f);
+    return 0;
 }
 
 int main() {
-    int b[2][3];
-    int i = 0, j = 0, n = 2, m = 3;
-    while (i < n) {
-        while (j < m) {
-            b[i][j] = read();
-            j = j + 1;
-        }
-        i = i + 1;
-        j = 0;
-    }
-    write(max(b));
-    return 0;
+    return test(0, 1, 2, 3, 4, 5);
 }

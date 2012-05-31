@@ -9,7 +9,7 @@ void gen_code(FILE *file, InterCodeList *codes);
 
 #define NR_VAR_PER_STACK_FRAME 100
 
-int offset_now;
+int offset_now, args_num;
 
 #define CONST_TEMP_REG 1000000
 

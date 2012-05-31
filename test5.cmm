@@ -1,6 +1,39 @@
+int max(int i, int j, int k, int m, int n, int o) {
+    int max;
+    int a[6];
+    a[0] = i;
+    a[1] = j;
+    a[2] = k;
+    a[3] = m;
+    a[4] = n;
+    a[5] = o;
+
+    i = 1;
+    n = 6;
+    
+    max = a[0];
+
+    while (i < n) {
+        if (a[i] > max)
+            max = a[i];
+        i = i + 1;
+    }
+
+    return max;
+}
+
 int main() {
-    int a[3][4][5];
-    a[0 + 1][1 + 1][1 + 2] = read();
-    write(a[1][2][1 + 1 + 1]);
+    int c, d, e, f, g, h;
+    c = read();
+    d = read();
+    e = read();
+    f = read();
+    g = read();
+    h = read();
+
+    c = max(c, d, e, f, g, h);
+
+    write(c);
+
     return 0;
 }

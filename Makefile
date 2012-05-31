@@ -64,8 +64,5 @@ test6: cc test6.cmm
 test7: cc test7.cmm
 	./cc test7.cmm test7.s
 
-test8: cc test8.cmm
-	./cc test8.cmm test8.s
-
 clean:
 	rm lex.yy.c cmmyacc.tab.c cmmyacc.tab.h cc cmmyacc.output *.o *.s
