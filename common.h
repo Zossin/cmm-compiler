@@ -1,6 +1,7 @@
 #ifndef _COMMON_H_
 #define _COMMON_H_
 
+#define BOOL unsigned char
 #define TRUE 1
 #define FALSE 0
 #define SYMBOL_NAME_LEN 32

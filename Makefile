@@ -1,11 +1,11 @@
-parser: main.o cmmyacc.tab.o syntax_tree.o symbol_table.o semantic_analysis.o type.o translate.o inter_code.o
-	gcc main.o cmmyacc.tab.o syntax_tree.o symbol_table.o semantic_analysis.o type.o translate.o inter_code.o -lfl -ly -g -o parser 
+cc: main.o cmmyacc.tab.o syntax_tree.o symbol_table.o semantic_analysis.o type.o translate.o inter_code.o var_table.o
+	gcc main.o cmmyacc.tab.o syntax_tree.o symbol_table.o semantic_analysis.o type.o translate.o inter_code.o var_table.o -lfl -ly -g -o cc 
 
-test: test_inter_code
-	./test_inter_code test.ir
+#test: test_inter_code
+#	./test_inter_code test.s
 
-test_inter_code: test_inter_code.c inter_code.o common.h inter_code.h
-	gcc -g test_inter_code.c inter_code.o -o test_inter_code
+#test_inter_code: test_inter_code.c inter_code.o common.h inter_code.h
+#	gcc -g test_inter_code.c inter_code.o -o test_inter_code
 
 main.o: main.c symbol_table.h syntax_tree_node.h common.h semantic_analysis.h translate.h inter_code.h
 	gcc -g -c main.c
@@ -19,6 +19,9 @@ syntax_tree.o: syntax_tree.c syntax_tree_node.h
 symbol_table.o: symbol_table.c symbol_table.h common.h
 	gcc -g -c symbol_table.c
 
+var_table.o: var_table.c common.h var_table.h
+	gcc -g -c var_table.c
+
 semantic_analysis.o: semantic_analysis.c symbol_table.h syntax_tree_node.h common.h semantic_analysis.h
 	gcc -g -c semantic_analysis.c
 
@@ -28,8 +31,11 @@ type.o: type.c common.h
 translate.o: translate.c symbol_table.h syntax_tree_node.h common.h translate.h inter_code.h
 	gcc -g -c translate.c
 
-inter_code.o: inter_code.c inter_code.h
+inter_code.o: inter_code.c inter_code.h common.h
 	gcc -g -c inter_code.c
+
+gen_code.o: gen_code.c inter_code.h gen_code.h var_table.h common.h
+	gcc -g -c gen_code.c
 
 lex.yy.c: cmmlex.l
 	flex cmmlex.l
@@ -37,29 +43,29 @@ lex.yy.c: cmmlex.l
 cmmyacc.tab.c: cmmyacc.y lex.yy.c syntax_tree_node.h
 	bison -dv cmmyacc.y
 
-test1: parser test1.cmm
-	./parser test1.cmm test1.ir
+test1: cc test1.cmm
+	./cc test1.cmm test1.s
 
-test2: parser test2.cmm
-	./parser test2.cmm test2.ir
+test2: cc test2.cmm
+	./cc test2.cmm test2.s
 
-test3: parser test3.cmm
-	./parser test3.cmm test3.ir
+test3: cc test3.cmm
+	./cc test3.cmm test3.s
 
-test4: parser test4.cmm
-	./parser test4.cmm test4.ir
+test4: cc test4.cmm
+	./cc test4.cmm test4.s
 
-test5: parser test5.cmm
-	./parser test5.cmm test5.ir
+test5: cc test5.cmm
+	./cc test5.cmm test5.s
 
-test6: parser test6.cmm
-	./parser test6.cmm test6.ir
+test6: cc test6.cmm
+	./cc test6.cmm test6.s
 
-test7: parser test7.cmm
-	./parser test7.cmm test7.ir
+test7: cc test7.cmm
+	./cc test7.cmm test7.s
 
-test8: parser test8.cmm
-	./parser test8.cmm test8.ir
+test8: cc test8.cmm
+	./cc test8.cmm test8.s
 
 clean:
-	rm lex.yy.c cmmyacc.tab.c cmmyacc.tab.h parser cmmyacc.output *.o test_inter_code *.ir
+	rm lex.yy.c cmmyacc.tab.c cmmyacc.tab.h cc cmmyacc.output *.o *.s
